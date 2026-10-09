@@ -1,0 +1,32 @@
+{
+  "note": "Whether the Privacy Gate dialog appeared, per run. Copied from the privacy_gate_choice column of Run Test Kit/runs.csv on 2026-10-08. 'no file' means the task had no attachment. 'not captured' means the run's screenshots do not show it either way.",
+  "gate": {
+    "0a": "no file",
+    "0b": "appeared",
+    "0c": "appeared",
+    "1": "appeared",
+    "2": "appeared",
+    "3": "did not appear",
+    "4": "did not appear",
+    "5": "did not appear",
+    "6": "did not appear",
+    "7": "no file",
+    "15": "no file",
+    "16": "no file",
+    "8": "no file",
+    "9": "no file",
+    "19": "no file",
+    "20": "no file",
+    "10": "no file",
+    "21": "no file",
+    "17": "no file",
+    "18": "no file",
+    "11": "not captured",
+    "24": "appeared",
+    "22": "appeared",
+    "12": "no file",
+    "23": "no file",
+    "13": "no file",
+    "14": "no file"
+  }
+}

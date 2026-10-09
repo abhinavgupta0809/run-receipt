@@ -1,0 +1,16 @@
+{
+  "note": "Three real sessions that used the same prompt word for word. Outputs are the files Perplexity produced, copied unchanged from Run Test Kit/outputs/07, 15 and 16.",
+  "task": "pricing_comparison",
+  "prompt": "Make a one-page comparison of the current US monthly prices for Notion, Obsidian Sync, and Evernote personal plans, with source links.",
+  "variation": "Make a one-page comparison of the current US monthly prices for Figma, Canva, and Sketch individual plans, with source links.",
+  "apps": [
+    { "name": "Notion", "domain": "notion.com" },
+    { "name": "Obsidian", "domain": "obsidian.md" },
+    { "name": "Evernote", "domain": "evernote.com" }
+  ],
+  "sessions": [
+    { "runId": "7", "when": "Oct 8, 2026, 2:37 AM", "file": "run07.md" },
+    { "runId": "15", "when": "Oct 8, 2026, 2:39 AM", "file": "run15.md" },
+    { "runId": "16", "when": "Oct 8, 2026, 6:35 PM", "file": "run16.md" }
+  ]
+}

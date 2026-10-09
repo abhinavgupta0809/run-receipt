@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# design working files and agent logs (local paths, not for publishing)
+/.impeccable/

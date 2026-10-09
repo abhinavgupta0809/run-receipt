@@ -1,0 +1,91 @@
+{
+  "note": "How Abhinav's local model router decides, and what broke. Facts copied on 2026-10-09 from ~/Desktop/Projects/local-agents-mcp (README.md, config/agents.json, ISSUES.md, last updated 2026-10-03) and from job-search-os/applications/perplexity-pm-2026-10/local-run-log.md. Draft: Abhinav has not approved this wording.",
+  "steps": [
+    {
+      "name": "Hand off a task",
+      "by": "person",
+      "where": "mac",
+      "what": "From Claude Code, I choose what to delegate. Nothing goes to a local model unless I ask."
+    },
+    {
+      "name": "Check who is available",
+      "by": "code",
+      "where": "mac",
+      "what": "The gateway keeps only workers whose runtime answers and whose model is installed."
+    },
+    {
+      "name": "Pick the worker",
+      "by": "cloud",
+      "where": "cloud",
+      "what": "A small cloud routing model, Jev, picks one worker from written criteria. It sees the task text only, not the context."
+    },
+    {
+      "name": "Fall back if the router fails",
+      "by": "code",
+      "where": "mac",
+      "what": "No key, a timeout or a bad choice: a fixed order takes over and the reason is recorded."
+    },
+    {
+      "name": "Do the work",
+      "by": "local",
+      "where": "mac",
+      "what": "One local model on the Mac gets the task and its context."
+    },
+    {
+      "name": "Reject and retry",
+      "by": "code",
+      "where": "mac",
+      "what": "An empty answer counts as a failure. The next worker is tried, two attempts at most, each once."
+    },
+    {
+      "name": "Check the result",
+      "by": "code",
+      "where": "mac",
+      "what": "Every answer says whether it was cut off. In Run Receipt, code recomputes the totals before anything is shown as final."
+    }
+  ],
+  "workers": [
+    {
+      "role": "coder",
+      "model": "qwen3:8b"
+    },
+    {
+      "role": "reviewer",
+      "model": "gemma3:4b"
+    },
+    {
+      "role": "second opinion",
+      "model": "qwen3:4b"
+    }
+  ],
+  "limits": {
+    "routerTimeoutSeconds": 5,
+    "workerTimeoutSeconds": 240,
+    "maxWorkerAttempts": 2
+  },
+  "broke": [
+    {
+      "what": "A routed call returned nothing for 593 seconds.",
+      "status": "Cause not found. The client gave up and the connection dropped."
+    },
+    {
+      "what": "The tunnel to the Mac dropped once, and a call failed at once.",
+      "status": "Restored by hand."
+    },
+    {
+      "what": "Answers that take longer than 60 seconds are lost by the calling app.",
+      "status": "Worked around with a longer timeout, not fixed."
+    },
+    {
+      "what": "The run log says ok when the caller never received the answer.",
+      "status": "Open."
+    }
+  ],
+  "issues": {
+    "logged": 18,
+    "fixed": 2,
+    "asOf": "Oct 3, 2026"
+  },
+  "recordedRun": "The recorded run on this page called the reviewer directly, with the routing step bypassed, after the routed attempt hung. It is a test of the local step and the checks, not of the routing.",
+  "callerNote": "The caller is Claude Code, a cloud assistant, so anything I hand off has already been seen by it. The router keeps the context away from the routing model. It does not keep it away from the caller."
+}

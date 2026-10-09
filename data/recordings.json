@@ -1,0 +1,25 @@
+{
+  "note": "Figures copied from the report each run produced. Source files: Run Test Kit/outputs/01_bank-report_cloud and 02_bank-report_hybrid (2026-10-04), and the local router output of 2026-10-03.",
+  "cloud": {
+    "runId": "1",
+    "reported": { "Housing": 1850.00, "Groceries": 425.34, "Subscriptions": 307.46, "Utilities": 227.18, "Transport": 155.95, "Shopping": 153.18, "Dining": 134.25, "Health": 72.90 },
+    "withheld": [],
+    "uncategorized": 0,
+    "duplicateFlagged": true,
+    "finalReadNote": "read about 3 min after finish"
+  },
+  "hybrid": {
+    "runId": "2",
+    "reported": { "Groceries": 304.14, "Shopping": 198.16, "Utilities": 162.18, "Subscriptions": 87.47, "Transport": 75.95, "Health": 24.60, "Dining": 6.75 },
+    "withheld": ["Housing"],
+    "uncategorized": 647.00,
+    "duplicateFlagged": false,
+    "finalReadNote": "read about 1 min after finish"
+  },
+  "router": {
+    "date": "2026-10-03",
+    "worker": "reviewer (gemma3:4b, Ollama) through local-agents-mcp, called directly with Jev routing bypassed",
+    "seconds": 15,
+    "file": "local_router_reviewer_gemma3-4b_2026-10-03.jsonl"
+  }
+}
