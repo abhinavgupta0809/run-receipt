@@ -70,7 +70,7 @@ export default function SkillPage() {
           <article className="sk-seen">
             <Icon kind="eye" />
             <h3>What I saw</h3>
-            <p>I ran one prompt {sessions.length} times, word for word, in a day. On Oct 2 to 4, 2026 the session menu showed no save-as-skill option and the skill builder had no test step. One menu was not checked.</p>
+            <p>I ran one prompt {sessions.length} times, word for word, in a day. On Oct 2 to 4, 2026 the session menu showed no save-as-skill option and the skill builder had no test step. I did not check one menu.</p>
           </article>
         </div>
         <p className="sum-note sk-after">My read of the gap. I have not interviewed Perplexity users about Skills.</p>

@@ -7,7 +7,7 @@ const TABS = [
   { href: "/", label: "The problem" },
   { href: "/evidence", label: "Evidence" },
   { href: "/receipt", label: "Prototype" },
-  { href: "/skill", label: "Session to Skill" },
+  { href: "/skill", label: "Session to Skill", short: "Skill" },
 ];
 
 export default function Tabs() {
@@ -25,7 +25,7 @@ export default function Tabs() {
               current ? "border-rule bg-paper text-ink" : "border-transparent text-ink2 hover:bg-paper/60 hover:text-ink"
             }`}
           >
-            {t.label}
+            {"short" in t && t.short ? <><span className="tab-long">{t.label}</span><span className="tab-short">{t.short}</span></> : t.label}
           </Link>
         );
       })}

@@ -96,6 +96,13 @@ export default function Replay({ data }: { data: ReplayData }) {
     }
   }, [stage]);
 
+  // With reduced motion the count does not animate: it goes straight to the settled reading.
+  const start = () => {
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setProgress(still ? 1 : 0);
+    setStage(still ? "final" : "running");
+  };
+
   // The meter is the thing to remember, so it plays once by itself when it scrolls into view.
   useEffect(() => {
     const el = meterRef.current;
@@ -104,7 +111,7 @@ export default function Replay({ data }: { data: ReplayData }) {
       (entries) => {
         if (entries.some((e) => e.isIntersecting) && !autoPlayed.current) {
           autoPlayed.current = true;
-          setStage((now) => (now === "plan" ? "running" : now));
+          start();
         }
       },
       { threshold: 0.6 },
@@ -123,8 +130,7 @@ export default function Replay({ data }: { data: ReplayData }) {
   };
   const play = () => {
     autoPlayed.current = true;
-    setProgress(0);
-    setStage("running");
+    start();
     meterRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" });
   };
 
@@ -135,7 +141,7 @@ export default function Replay({ data }: { data: ReplayData }) {
       <header className="proto-intro">
         <h1>One receipt, three moments</h1>
         <p>
-          Each part of the receipt answers one of the three problems. Below is a recorded run of mine, replayed: <b>{TASKS[task].label}</b>, private steps on {mode === "hybrid" ? "my Mac" : "the cloud"}, run {lane.run.id}.
+          Each part of the receipt answers one of the three problems. Below is a recorded run of mine, replayed: <b>{TASKS[task].label}</b>, {mode === "hybrid" ? "with Hybrid on and the private steps on my Mac" : "run fully in the cloud for comparison"}, run {lane.run.id}.
         </p>
       </header>
 
@@ -189,16 +195,16 @@ export default function Replay({ data }: { data: ReplayData }) {
               On past runs of this task, the count at Finished was <b className="fig">{span(lane.estimate.undercountPct, pct)}</b> below the final charge.
             </p>
           )}
-          {(stage === "plan" || stage === "final") && (
+          {stage === "final" && (
             <button type="button" onClick={play} className="btn btn-quiet mt-4">
-              {stage === "plan" ? "Play the count" : "Play it again"}
+              Play it again
             </button>
           )}
         </div>
       </section>
 
       <section className="pv hybrid" aria-labelledby="pv-hybrid">
-        <ProblemSide id="pv-hybrid" {...PROBLEMS.hybrid} />
+        <ProblemSide id="pv-hybrid" {...PROBLEMS.hybrid} answer={mode === "hybrid" ? PROBLEMS.hybrid.answer : "This is the comparison run: the same task done fully in the cloud, with nothing on the Mac. The receipt runs the same checks."} />
         <div className="tape">
           <Head>After</Head>
           <p className="pv-ran">
@@ -244,7 +250,7 @@ export default function Replay({ data }: { data: ReplayData }) {
             <div className="switch">
               {(["hybrid", "cloud"] as const).map((m) => (
                 <button key={m} type="button" onClick={() => reset(m)} aria-pressed={mode === m}>
-                  {m === "hybrid" ? "My Mac (Hybrid)" : "Cloud"}
+                  {m === "hybrid" ? "My Mac (Hybrid)" : "Cloud, for comparison"}
                 </button>
               ))}
             </div>
@@ -265,7 +271,6 @@ function ProblemSide({ id, n, title, answer }: { id: string; n: string; title: s
   return (
     <div className="pv-problem">
       <p className="pv-n" aria-hidden="true">{n}</p>
-      <p className="pv-label">Problem {n}</p>
       <h2 id={id}>{title}</h2>
       <p className="pv-answer">{answer}</p>
     </div>
@@ -296,7 +301,7 @@ function Verdict({ right, total, what, ok, note }: { right: number; total: numbe
     <div className="pv-verdict">
       <p className="pv-verdict-line">
         <span className="fig">{right} of {total}</span> {what}
-        <span className={`stamp ${ok ? "stamp-pass" : "stamp-fail"}`}>{ok ? "ALL MATCH" : "CAUGHT"}</span>
+        <span className={`pv-chip ${ok ? "good" : "bad"}`}>{ok ? "All match" : "Caught by the receipt"}</span>
       </p>
       <p className="small">{note}</p>
     </div>
@@ -357,7 +362,7 @@ function Meter({ lane, steps, stage, progress }: { lane: { mode: Mode; run: Pane
 
       <p className="mt-3 min-h-[3.2em] text-[0.9375rem]" aria-live="polite">
         {stage === "plan" ? (
-          <>The count starts when the run is sent.</>
+          <>The count starts when you press &ldquo;Send this run&rdquo; above.</>
         ) : stage === "running" ? (
           <>
             <span className="fig text-ink3">
@@ -377,7 +382,7 @@ function Meter({ lane, steps, stage, progress }: { lane: { mode: Mode; run: Pane
         )}
       </p>
       <p className="small mt-2">
-        Replayed in {REPLAY_MS / 1000} s. The real run took {run.secondsNote && /^(about|\d)/.test(run.secondsNote) ? run.secondsNote : `${run.seconds === null ? "an unrecorded time" : duration(run.seconds)}${run.secondsNote ? ` (${run.secondsNote})` : ""}`}.
+        Replayed in {REPLAY_MS / 1000} s. {run.seconds === null ? `The real run was not timed${run.secondsNote ? ` (${run.secondsNote})` : ""}.` : `The real run took ${run.secondsNote && /^(about|\d)/.test(run.secondsNote) ? run.secondsNote : `${duration(run.seconds)}${run.secondsNote ? ` (${run.secondsNote})` : ""}`}.`}
         {run.localTokens ? ` Local model used about ${(run.localTokens / 1000).toFixed(1)}K tokens on the Mac.` : ""} Step order during the replay is illustrative; only the run totals were measured.
       </p>
     </div>
@@ -414,7 +419,7 @@ function Receipt({
       {lane.withheld.length > 0 && (
         <div className="pv-box">
           <p>
-            Withheld from the cloud, and missing from your own report: <strong>{lane.withheld.map((w) => w.category).join(", ")}</strong>.
+            <strong>{lane.withheld.map((w) => w.category).join(", ")}</strong> {lane.withheld.length === 1 ? "was" : "were"} kept off the cloud, so {lane.withheld.length === 1 ? "it is" : "they are"} missing from your own report.
           </p>
           {showWithheld && (
             <ul className="line-in mt-2">
@@ -434,13 +439,13 @@ function Receipt({
       {lane.mode === "hybrid" && failed > 0 && data.rerunGap && (
         <div className="pv-box pv-repair">
           <p className="font-semibold">
-            Repair: rerun in the cloud for about <span className="fig">{span(data.rerunGap, credits)}</span> more credits?
+            Repair it for about <span className="fig">{span(data.rerunGap, credits)}</span> more credits.
           </p>
           <p className="small mt-1">
-            Estimate: the measured gap between cloud and Hybrid runs of this task, {data.rerunGap.n} runs each. A single-step rerun was not measured.
+            This replay shows my recorded cloud run of the same task. The price is the measured gap between cloud and Hybrid runs, {data.rerunGap.n} runs each; a single-step rerun was not measured.
           </p>
           <button type="button" onClick={onRerun} className="btn mt-3" aria-expanded={rerun}>
-            {rerun ? "Hide the cloud result" : "Show the cloud result"}
+            {rerun ? "Hide the cloud result" : "Rerun in the cloud"}
           </button>
           {rerun && (
             <div className="line-in mt-4">
@@ -618,7 +623,7 @@ function ChecksHeading({ failed, total }: { failed: number; total: number }) {
         <span className="good">All {total} checks matched your file</span>
       ) : (
         <span className="bad">
-          {failed} of {total} checks caught a mismatch
+          {failed} of {total} checks found a mismatch
         </span>
       )}
     </h4>
@@ -631,7 +636,7 @@ function CheckList({ checks }: { checks: Check[] }) {
       {checks.map((c, i) => (
         <li key={c.name} className="line-in grid grid-cols-[4.75rem_minmax(0,1fr)] items-baseline gap-x-2 border-b border-grid py-2 text-[0.9375rem] last:border-b-0" style={{ "--i": i } as React.CSSProperties}>
           <span>
-            <span className={`stamp ${c.passed ? "stamp-pass" : "stamp-fail"}`}>{c.passed ? "MATCH" : "CAUGHT"}</span>
+            <span className={`stamp ${c.passed ? "stamp-pass" : "stamp-fail"}`}>{c.passed ? "MATCH" : "MISMATCH"}</span>
           </span>
           <span className="flex flex-wrap items-baseline justify-between gap-x-4">
             <span className={c.passed ? "" : "font-semibold"}>{c.name}</span>

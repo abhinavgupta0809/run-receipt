@@ -48,10 +48,10 @@ export default function Summary() {
         <div>
           <h1 className="long">Same prompt, {countWord(repeat.runs.length)} runs: {listOf(repeatFinals)} credits.</h1>
           <p className="sum-lede">
-            I ran one Perplexity Computer prompt {countWord(repeat.runs.length)} times on the same setting. The dearest run cost {repeatSpread}% more than the cheapest. The credit meter read below the final charge in {h.panelLow} of {h.panelReadings} readings, and Hybrid mode ran on my Mac in only {h.hybridRanLocal} of {h.hybridOn} runs.
+            I ran one Perplexity Computer prompt {countWord(repeat.runs.length)} times on the same setting. The most expensive run cost {repeatSpread}% more than the cheapest. You can&apos;t budget for that, and {n(research.creditsRunOut.reviews)} store reviews are from paying users who ran out of credits.
           </p>
           <p className="sum-lede sum-why">
-            It is not only me: {n(research.creditsRunOut.reviews)} store reviews are from paying users who ran out of credits. <b>Run Receipt</b> is my fix. It shows a cost range before you send, a count marked provisional while it runs, and numbers checked by code after.
+            <b>Run Receipt</b> is my fix: a cost range before you send, a provisional count while it runs, and numbers checked by code after.
           </p>
           <p className="sum-actions">
             <Link href="/receipt" className="btn">See the fix</Link>
@@ -85,7 +85,7 @@ export default function Summary() {
                 <span className="dots" />
                 <span className="fig">{totals} <span className="stamp text-fail">CAUGHT</span></span>
               </div>
-              <Row label="Withheld" value={lane.withheld.map((w) => w.category).join(", ")} />
+              <Row label="Left out of the report" value={lane.withheld.map((w) => w.category).join(", ")} />
             </div>
             <div className="leader sum-total line-in" style={{ animationDelay: "2.3s" }}>
               <span>TOTAL</span>
@@ -102,7 +102,7 @@ export default function Summary() {
         <h2 id="problems" className="sum-h2">Three problems, measured</h2>
         <div className="sum-problems">
           <Problem tone="cost" n="1" title="Cost is a surprise." figure={range} unit="credits for one prompt"
-            body={`The same prompt on the same setting cost ${range} credits across ${runCount(h.widestRepeat.credits.n)}. Nothing estimates the cost before you send.`}
+            body={`The same prompt on the same setting cost ${range} credits across ${runCount(h.widestRepeat.credits.n)}. Nothing on my screen said which price I would get.`}
             limit={`${runCount(repeat.runs.length)} of one prompt. A count, not a rate.`}>
             <ul data-chart className="sum-bars" aria-label="Final credits for each run of the same prompt">
               {repeat.runs.map((r) => (
@@ -111,8 +111,8 @@ export default function Summary() {
             </ul>
           </Problem>
           <Problem tone="meter" n="2" title="The credit meter reads low while you watch it." figure={`${h.panelLow} of ${h.panelReadings}`} unit="readings below the final charge"
-            body={`When the run said Finished, the panel was below the final charge in ${h.panelLow} of ${h.panelReadings} readings.`}
-            limit="The panel does catch up later.">
+            body={`When the run said Finished, the meter was below the final charge in ${h.panelLow} of ${h.panelReadings} readings.`}
+            limit="The meter does catch up later.">
             <Dots tone="meter" total={h.panelReadings} on={h.panelLow} perRow={9} label={`${h.panelLow} of ${h.panelReadings} panel readings were below the final charge`} />
           </Problem>
           <Problem tone="hybrid" n="3" title="Hybrid mode is unpredictable." figure={`${h.hybridRanLocal} of ${h.hybridOn}`} unit="Hybrid runs ran on the Mac"

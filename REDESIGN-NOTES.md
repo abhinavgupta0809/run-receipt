@@ -341,3 +341,21 @@ Abhinav's brief: a visitor should see the problem, why it is a problem, and the 
 - **Session to Skill (`/skill`):** the working builder is replaced by "From 3 runs to one skill": the
   three runs on the left, the skill they become on the right, the Markdown file behind a fold.
   `app/skill/builder.tsx` is no longer used.
+
+## 2026-10-09: fixes after the second designer review
+
+- Hero lede cut to two short paragraphs; "dearest" became "most expensive".
+- Home problem card 1 now says "Nothing on my screen said which price I would get." in place of the
+  unconfirmed "Nothing estimates the cost before you send." "Panel" became "meter" on the home page.
+- Prototype: the Cloud runs are labelled as comparison runs (intro, view 3, and the switch). One
+  button starts the replay. The verdict chip reads "Caught by the receipt"; check rows read MATCH or
+  MISMATCH; the repair button reads "Rerun in the cloud". With reduced motion the count goes straight
+  to the settled reading. The "Problem N" labels above the headings are gone (the badge says it).
+- Evidence chart 5: the left-out bar stops short of the real-total line, the legend lists only what
+  is drawn plus the real-total mark, and the cloud result moved from the title to the note. On phones
+  its rows stack so the line stays in one place.
+- Contrast: `--ink3` raised in both themes; light-theme tones, red and green darkened to pass 4.5:1.
+- Phones: the fourth tab reads "Skill".
+
+Left for Abhinav to decide: whether Session to Skill stays a top tab, whether "The solution" strip on
+that page goes (it repeats the demo), and whether "Users say it too" should lead with 202 / 159 / 68.

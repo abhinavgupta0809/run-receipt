@@ -121,13 +121,13 @@ export default function Evidence() {
         <Side n="3" id="ev-hybrid" title="Hybrid mode is unpredictable." note={`One Mac, one local model (${PROTOCOL.localModel}).`} />
         <div className="ev-stack">
           <Card title={`With Hybrid on, a step ran on my Mac in ${h.hybridRanLocal} of ${h.hybridOn} runs`}
-            sub="One dot per run with Hybrid on. Filled means the local model ran. It ran only when the Privacy Gate appeared, and the gate flagged the bank file and nothing else."
+            sub="One dot per run with Hybrid on. Filled means the local model ran. It ran only when Perplexity’s privacy prompt (the Privacy Gate) appeared, and that prompt flagged the bank file and nothing else."
             limit={lab ? `In the other runs nothing ran locally. One of them, ${lab.label.toLowerCase()}, cost ${credits(lab.hybrid.credits.min)} credits with Hybrid on against ${credits(lab.cloud.credits.min)} in the cloud.` : undefined}>
             <Dots tone="hybrid" total={h.hybridOn} on={h.hybridRanLocal} perRow={8} label={`${h.hybridRanLocal} of ${h.hybridOn} runs with Hybrid on ran a step on the Mac`} />
           </Card>
-          <Card title={`When it did run locally, ${hy.totalsRight} of ${hy.rows.length} totals matched my file. The cloud run got ${cl.totalsRight} of ${cl.rows.length}`}
+          <Card title={`When it did run locally, ${hy.totalsRight} of ${hy.rows.length} totals matched my file`}
             sub={`Bank report, Hybrid run ${hy.run.id}. Each bar is what the report said, as a share of the real total. The line marks the real total.`}
-            limit={`In ${t.localRunsNotFullMarks} of the ${t.localRuns} runs where the local model ran, the result was wrong or incomplete. On the Excel budget, ${bh.completeRows} of ${bh.rowCount} rows came back complete.`}>
+            limit={`The cloud run of the same task got ${cl.totalsRight} of ${cl.rows.length}. In ${t.localRunsNotFullMarks} of the ${t.localRuns} runs where the local model ran, the result was wrong or incomplete. On the Excel budget, ${bh.completeRows} of ${bh.rowCount} rows came back complete.`}>
             <ul className="hb truth" data-chart>
               {hy.rows.map((r) => (
                 <li key={r.category}>
@@ -136,11 +136,11 @@ export default function Evidence() {
                     {r.reported === null ? <i className="hb-held" /> : <i className={r.ok ? "hb-match" : "hb-over"} style={{ width: `${(ratio(r) / 150) * 100}%` }} />}
                     <i className="hb-mark" />
                   </div>
-                  <b className="fig">{r.reported === null ? "withheld" : money(r.reported)} <em>of {money(r.truth)}</em></b>
+                  <b className="fig">{r.reported === null ? "left out" : money(r.reported)} <em>of {money(r.truth)}</em></b>
                 </li>
               ))}
             </ul>
-            <p className="key"><span><i className="k-later" />Hybrid report, wrong</span><span><i className="k-match" />Matches the file</span><span><i className="k-held" />Withheld from the report</span></p>
+            <p className="key"><span><i className="k-later" />What the Hybrid report said</span>{hy.rows.some((r) => r.ok) && <span><i className="k-match" />Matches the file</span>}{hy.rows.some((r) => r.reported === null) && <span><i className="k-held" />Left out of the report</span>}<span><i className="k-mark" />The real total</span></p>
           </Card>
           <Card title="The spreadsheet run said so itself: “You need to fill in a few cells”" sub={`Excel budget, Hybrid run ${bh.run.id}. The values it left blank were on the Mac the whole time.`}>
             <Shot src="run22-reply-fill-in-cells" w={1411} h={392} alt="The run's reply: You need to fill in a few cells.">The run&apos;s own reply.</Shot>
@@ -202,7 +202,6 @@ function Side({ n, id, title, note }: { n: string; id: string; title: string; no
   return (
     <div className="pv-problem">
       <p className="pv-n" aria-hidden="true">{n}</p>
-      <p className="pv-label">Problem {n}</p>
       <h2 id={id}>{title}</h2>
       <p className="pv-answer">{note}</p>
     </div>

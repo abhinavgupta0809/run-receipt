@@ -4,7 +4,7 @@
    --ink2 for labels and captions; --ink3 for source lines; --brand for page and section headings and links. */
 :root {
   --paper:#0e0f12; --sheet:#15171c; --raised:#1c1f26; --well:#0b0c0f; --bubble:#232733;
-  --ink:#f4f4f2; --soft:#c3c2b7; --ink2:#8d8c84; --ink3:#77766f; --rule:#2a2d35; --grid:#22252c;
+  --ink:#f4f4f2; --soft:#c3c2b7; --ink2:#8d8c84; --ink3:#918f87; --rule:#2a2d35; --grid:#22252c;
   --brand:#4fb8c6; --on-brand:#0e0f12;
   --cost:#c98500; --meter:#3987e5; --hybrid:#b07cf2; --rest:#3d414b; --on-tone:#0e0f12;
   --wrong:#e66767; --right:#199e70;
@@ -20,10 +20,10 @@
 }
 :root[data-theme="light"] {
   --paper:#f5efe3; --sheet:#fdf9f1; --raised:#fffdf8; --well:#f1e9da; --bubble:#ece3d2;
-  --ink:#14110d; --soft:#3f3b35; --ink2:#685f52; --ink3:#7a7163; --rule:#e0d5c2; --grid:#ebe2d2;
+  --ink:#14110d; --soft:#3f3b35; --ink2:#685f52; --ink3:#665d4f; --rule:#e0d5c2; --grid:#ebe2d2;
   --brand:#1a6f7a; --on-brand:#ffffff;
-  --cost:#b87700; --meter:#2a78d6; --hybrid:#7a4fd0; --rest:#cfc6b6; --on-tone:#ffffff;
-  --wrong:#c93a3a; --right:#12805c;
+  --cost:#9a6400; --meter:#2068c4; --hybrid:#7a4fd0; --rest:#cfc6b6; --on-tone:#ffffff;
+  --wrong:#b42f2f; --right:#0f6e4f;
   --cost-hi:#8a5900; --meter-hi:#1c5cb0; --hybrid-hi:#5a34a8;
   --skill:#5b49c9; --skill-ink:#ffffff;
   --shadow:0 24px 50px -32px rgba(60,45,20,.35);
@@ -974,4 +974,21 @@ a:hover { text-decoration-color:var(--brand); }
 @media (max-width:900px) {
   .sk-out { grid-template-columns:1fr; }
   .sk-arrow { justify-self:center; transform:rotate(90deg); }
+}
+
+/* Second review fixes. */
+.tab-short { display:none; }
+.pv-chip { display:inline-flex; align-items:center; font-size:.8125rem; font-weight:700; padding:3px 10px; border-radius:999px; border:1.5px solid currentColor; line-height:1.3; }
+.hb-held { width:38%; }
+.hb-track > .hb-base, .hb-track > .hb-over, .hb-track > .hb-match { opacity:.92; }
+.k-mark { width:2px !important; height:13px !important; border-radius:0 !important; background:var(--ink); }
+.sk-out { align-items:start; }
+.sk-arrow { align-self:center; }
+.fold > summary { min-height:40px; }
+.switch button { min-height:40px; }
+@media (max-width:640px) {
+  .tab-long { display:none; }
+  .tab-short { display:inline; }
+  .hb.truth li { grid-template-columns:1fr; gap:4px; }
+  .hb.truth b { text-align:left; }
 }
