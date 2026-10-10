@@ -20,7 +20,12 @@ type Research = {
   quotes: { tone: string; text: string; stars: number; when: string; source: string }[];
 };
 const n = (x: number) => x.toLocaleString("en-US");
+const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+const countWord = (x: number) => WORDS[x] ?? String(x);
+// "12.14, 14.29 and 21.96"
+const listOf = (values: number[]) => { const parts = values.map(credits); return parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}` : parts.join(""); };
 
+// Order: the problem with a number, the three problems, users saying the same, the fix, how to measure it, then method and limits.
 // The two-minute read. Every table and screenshot behind it lives on /evidence.
 // Built at build time from data/ through lib/. No figure on this page is typed by hand.
 export default function Summary() {
@@ -34,28 +39,30 @@ export default function Summary() {
   const totals = `${lane.totalsRight} of ${lane.rows.length}`;
   const range = span(h.widestRepeat.credits, credits);
   const research = JSON.parse(readFileSync(path.join(process.cwd(), "data", "research.json"), "utf8")) as Research;
+  const repeatFinals = repeat.runs.map((r) => r.final).sort((x, y) => x - y);
+  const repeatSpread = Math.round((repeatFinals[repeatFinals.length - 1] / repeatFinals[0] - 1) * 100);
 
   return (
     <main className="sum">
       <section className="sum-hero">
         <div>
-          <h1>A receipt for every agent run</h1>
+          <h1 className="long">Same prompt, {countWord(repeat.runs.length)} runs: {listOf(repeatFinals)} credits.</h1>
           <p className="sum-lede">
-            I am a product manager with six years of experience, now studying at Carnegie Mellon University. I measured Perplexity Computer across {h.runs} runs on my own account, found three problems and built a fix.
+            I ran one Perplexity Computer prompt {countWord(repeat.runs.length)} times on the same setting. The dearest run cost {repeatSpread}% more than the cheapest. The credit meter read below the final charge in {h.panelLow} of {h.panelReadings} readings, and Hybrid mode ran on my Mac in only {h.hybridRanLocal} of {h.hybridOn} runs.
+          </p>
+          <p className="sum-lede sum-why">
+            It is not only me: {n(research.creditsRunOut.reviews)} store reviews are from paying users who ran out of credits. <b>Run Receipt</b> is my fix. It shows a cost range before you send, a count marked provisional while it runs, and numbers checked by code after.
           </p>
           <p className="sum-actions">
-            <Link href="/receipt" className="btn">Open the prototype</Link>
-            <Link href="/evidence" className="btn btn-quiet">See the evidence</Link>
+            <Link href="/receipt" className="btn">See the fix</Link>
+            <Link href="#problems" className="btn btn-quiet">The three problems</Link>
           </p>
-          <ul className="sum-facts" aria-label="Scope of the study">
-            <li><b>{h.runs}</b> runs</li>
-            <li><b>{h.taskTypes}</b> task types</li>
-            <li><b>1</b> account</li>
-            <li>{PROTOCOL.period}</li>
-          </ul>
+          <p className="sum-byline">
+            By <b>Abhinav Gupta</b>, a product manager with six years of experience, now in the MS Product Management program at Carnegie Mellon. {h.runs} runs, {h.taskTypes} task types, one account, {PROTOCOL.period}.
+          </p>
         </div>
         <figure className="sum-receipt" aria-label={`Receipt for recorded run ${lane.run.id}`}>
-          <figcaption>One run, as its receipt</figcaption>
+          <figcaption>The fix: one run, as its receipt</figcaption>
           <div className="tape">
             <p className="small">Bank report, private steps on your Mac. Recorded run {lane.run.id}.</p>
             <div className="sum-moment cost line-in" style={{ animationDelay: "0.2s" }}>
@@ -91,53 +98,6 @@ export default function Summary() {
 
       <hr className="tri-rule" />
 
-      <section aria-labelledby="path">
-        <h2 id="path" className="sum-h2">How I got to this problem</h2>
-        <ol className="sum-path">
-          <li><span>1</span><h3>Read what users say</h3><p>{n(research.firstRead.reviews)} recent App Store reviews, Reddit threads and press coverage. Later, {n(research.corpus.reviews)} store reviews in a dashboard.</p></li>
-          <li><span>2</span><h3>Framed the problems</h3><p>{research.firstRead.problemStatements} problem statements. The largest group was about credits. I ruled out exporters, browser clones and UI redesigns.</p></li>
-          <li><span>3</span><h3>Used the product</h3><p>I walked through Computer, Hybrid and Skills on my own account.</p></li>
-          <li><span>4</span><h3>Measured it</h3><p>{h.runs} runs with made-up files and answer keys, {PROTOCOL.period}.</p></li>
-          <li><span>5</span><h3>Built the fix</h3><p>Run Receipt first, then Session to Skill.</p></li>
-        </ol>
-      </section>
-
-      <section aria-labelledby="research">
-        <h2 id="research" className="sum-h2">What users say</h2>
-        <div className="sum-research">
-          <div>
-            <ul className="sum-counts" aria-label="Reviews read">
-              <li><b>{n(research.corpus.reviews)}</b><span>{research.corpus.stores} reviews, {research.corpus.from} to {research.corpus.to}</span></li>
-              <li><b>{n(research.corpus.substantive)}</b><span>of them say something specific</span></li>
-              <li className="cost"><b>{n(research.money.reviews)}</b><span>complaints and requests about credits, limits, pricing or billing</span></li>
-            </ul>
-            <p className="sum-finding">
-              <b>{research.creditsRunOut.reviews}</b> reviews are from paying users who ran out of credits, and {research.creditsRunOut.lowStar} of those came with 1 or 2 stars. <b>{research.computerCredits.reviews}</b> say Computer burned through their credits.
-            </p>
-            <p className="sum-finding quiet">
-              This is not the largest complaint. {research.larger.map((c) => `${c.title} (${c.reviews})`).join(" and ")} are bigger. Run Receipt is aimed at paying Computer users.
-            </p>
-            <div className="sum-quotes">
-              {research.quotes.map((q) => (
-                <figure key={q.text} className={q.tone}>
-                  <blockquote>&ldquo;{q.text}&rdquo;</blockquote>
-                  <figcaption>{q.stars} of 5 stars. {q.source}, {q.when}.</figcaption>
-                </figure>
-              ))}
-            </div>
-            <p className="sum-source">
-              Public reviews, not interviews. Labels come from an LLM, checked against {research.labelCheck.n} hand-labelled reviews: {research.labelCheck.matches} matched. A keyword search of these reviews found none about the credit meter reading low. That finding comes from my own runs.
-            </p>
-          </div>
-          <aside className="sum-slot" aria-label="Reviews dashboard">
-            <p className="sum-slot-tag">{research.dashboardUrl ? "Live" : "Built, not yet published"}</p>
-            <h3>Reviews dashboard</h3>
-            <p>All {n(research.corpus.reviews)} reviews, labelled, in four views: overview, deep dive, opportunities and every review.</p>
-            {research.dashboardUrl ? <p className="sum-actions"><a className="btn btn-quiet" href={research.dashboardUrl}>Open the dashboard</a></p> : <p className="sum-slot-note">The link goes here when it is live.</p>}
-          </aside>
-        </div>
-      </section>
-
       <section aria-labelledby="problems">
         <h2 id="problems" className="sum-h2">Three problems, measured</h2>
         <div className="sum-problems">
@@ -160,6 +120,42 @@ export default function Summary() {
             limit="One Mac, one local model.">
             <Dots tone="hybrid" total={h.hybridOn} on={h.hybridRanLocal} perRow={8} label={`${h.hybridRanLocal} of ${h.hybridOn} runs with Hybrid on ran a step on the Mac`} />
           </Problem>
+        </div>
+      </section>
+
+      <section aria-labelledby="research">
+        <h2 id="research" className="sum-h2">Users say it too</h2>
+        <div className="sum-research">
+          <div>
+            <ul className="sum-counts" aria-label="Reviews read">
+              <li><b>{n(research.corpus.reviews)}</b><span>{research.corpus.stores} reviews, {research.corpus.from} to {research.corpus.to}</span></li>
+              <li><b>{n(research.corpus.substantive)}</b><span>of them say something specific</span></li>
+              <li className="cost"><b>{n(research.money.reviews)}</b><span>complaints and requests about credits, limits, pricing or billing</span></li>
+            </ul>
+            <p className="sum-finding">
+              <b>{research.creditsRunOut.reviews}</b> reviews are from paying users who ran out of credits, and {research.creditsRunOut.lowStar} of those came with 1 or 2 stars. <b>{research.computerCredits.reviews}</b> say Computer burned through their credits.
+            </p>
+            <p className="sum-finding quiet">
+              This is not the largest complaint. {research.larger.map((c) => `${c.title} (${c.reviews})`).join(" and ")} are bigger. Run Receipt is aimed at paying Computer users.
+            </p>
+            <div className="sum-quotes">
+              {research.quotes.slice(0, 2).map((q) => (
+                <figure key={q.text} className={q.tone}>
+                  <blockquote>&ldquo;{q.text}&rdquo;</blockquote>
+                  <figcaption>{q.stars} of 5 stars. {q.source}, {q.when}.</figcaption>
+                </figure>
+              ))}
+            </div>
+            <p className="sum-source">
+              Public reviews, not interviews. Labels come from an LLM, checked against {research.labelCheck.n} hand-labelled reviews: {research.labelCheck.matches} matched. A keyword search of these reviews found none about the credit meter reading low. That finding comes from my own runs.
+            </p>
+          </div>
+          <aside className="sum-slot" aria-label="Reviews dashboard">
+            <p className="sum-slot-tag">{research.dashboardUrl ? "Live" : "Built, not yet published"}</p>
+            <h3>Reviews dashboard</h3>
+            <p>All {n(research.corpus.reviews)} reviews, labelled, in four views: overview, deep dive, opportunities and every review.</p>
+            {research.dashboardUrl ? <p className="sum-actions"><a className="btn btn-quiet" href={research.dashboardUrl}>Open the dashboard</a></p> : <p className="sum-slot-note">The link goes here when it is live.</p>}
+          </aside>
         </div>
       </section>
 
@@ -210,6 +206,17 @@ export default function Summary() {
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section aria-labelledby="path">
+        <h2 id="path" className="sum-h2">How I worked</h2>
+        <ol className="sum-path">
+          <li><span>1</span><h3>Read what users say</h3><p>{n(research.firstRead.reviews)} recent App Store reviews, Reddit threads and press coverage. Later, {n(research.corpus.reviews)} store reviews in a dashboard.</p></li>
+          <li><span>2</span><h3>Framed the problems</h3><p>{research.firstRead.problemStatements} problem statements. The largest group was about credits. I ruled out exporters, browser clones and UI redesigns.</p></li>
+          <li><span>3</span><h3>Used the product</h3><p>I walked through Computer, Hybrid and Skills on my own account.</p></li>
+          <li><span>4</span><h3>Measured it</h3><p>{h.runs} runs with made-up files and answer keys, {PROTOCOL.period}.</p></li>
+          <li><span>5</span><h3>Built the fix</h3><p>Run Receipt first, then Session to Skill.</p></li>
+        </ol>
       </section>
 
       <section aria-labelledby="limits" className="sum-limits">

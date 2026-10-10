@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { Lane, ReplayData, TotalRow } from "@/lib/replay.ts";
 import type { PanelRun, SheetLane } from "@/lib/sheet.ts";
-import type { Group, Headline } from "@/lib/summary.ts";
 import type { Check } from "@/lib/verify.ts";
 import { credits, duration, money, pct, signed, span } from "../format";
 
@@ -63,6 +62,12 @@ const STEPS: Record<Task, Step[]> = {
 
 const ROUTE_CHIP: Record<Route, string> = { Search: "chip chip-search", "Your Mac": "chip chip-mac", Cloud: "chip chip-cloud" };
 
+const PROBLEMS = {
+  cost: { n: "1", title: "Cost is a surprise.", answer: "Before you send, the receipt gives a credit range and a time range taken from past runs of the same task." },
+  meter: { n: "2", title: "The credit meter reads low while you watch it.", answer: "While it runs, the count is marked provisional until the final charge lands." },
+  hybrid: { n: "3", title: "Hybrid mode is unpredictable.", answer: "After, the receipt says where each step ran, checks the numbers with code and offers a repair." },
+} as const;
+
 export default function Replay({ data }: { data: ReplayData }) {
   const [task, setTask] = useState<Task>("report");
   const [mode, setMode] = useState<Mode>("hybrid");
@@ -70,13 +75,13 @@ export default function Replay({ data }: { data: ReplayData }) {
   const [progress, setProgress] = useState(0);
   const [showWithheld, setShowWithheld] = useState(false);
   const [rerun, setRerun] = useState(false);
-  const meterRef = useRef<HTMLDivElement>(null);
+  const meterRef = useRef<HTMLElement>(null);
+  const autoPlayed = useRef(false);
   const lane = task === "report" ? data[mode] : data.budget[mode];
   const steps = STEPS[task];
 
   useEffect(() => {
     if (stage === "running") {
-      meterRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "nearest" });
       const start = performance.now();
       const id = setInterval(() => {
         const p = Math.min(1, (performance.now() - start) / REPLAY_MS);
@@ -91,6 +96,23 @@ export default function Replay({ data }: { data: ReplayData }) {
     }
   }, [stage]);
 
+  // The meter is the thing to remember, so it plays once by itself when it scrolls into view.
+  useEffect(() => {
+    const el = meterRef.current;
+    if (!el || autoPlayed.current) return;
+    const seen = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting) && !autoPlayed.current) {
+          autoPlayed.current = true;
+          setStage((now) => (now === "plan" ? "running" : now));
+        }
+      },
+      { threshold: 0.6 },
+    );
+    seen.observe(el);
+    return () => seen.disconnect();
+  }, []);
+
   const reset = (next: Mode = mode, nextTask: Task = task) => {
     setTask(nextTask);
     setMode(next);
@@ -99,56 +121,43 @@ export default function Replay({ data }: { data: ReplayData }) {
     setShowWithheld(false);
     setRerun(false);
   };
+  const play = () => {
+    autoPlayed.current = true;
+    setProgress(0);
+    setStage("running");
+    meterRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" });
+  };
+
+  const ranOn = (["Your Mac", "Cloud", "Search"] as Route[]).map((route) => ({ route, count: steps.filter((s) => s.route[mode] === route).length })).filter((r) => r.count > 0);
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 pb-20 sm:px-8">
-      <div className="grid gap-x-14 gap-y-8 pt-10 sm:pt-14 lg:grid-cols-[minmax(0,17rem)_minmax(0,42rem)] lg:items-start">
-        <div className="lg:sticky lg:top-6">
-          <h1 className="text-[2rem] leading-[1.1] font-bold tracking-tight">The prototype</h1>
-          <p className="mt-3 text-[0.9375rem] leading-relaxed text-ink2">One run, printed as a receipt: the plan before, the credit count during, the checks after.</p>
+    <main className="proto mx-auto w-full max-w-6xl px-4 pb-20 sm:px-8">
+      <header className="proto-intro">
+        <h1>One receipt, three moments</h1>
+        <p>
+          Each part of the receipt answers one of the three problems. Below is a recorded run of mine, replayed: <b>{TASKS[task].label}</b>, private steps on {mode === "hybrid" ? "my Mac" : "the cloud"}, run {lane.run.id}.
+        </p>
+      </header>
 
-          <fieldset className="mt-6">
-            <legend className="small mb-1.5 font-semibold">Task</legend>
-            <div className="switch">
-              {(Object.keys(TASKS) as Task[]).map((t) => (
-                <button key={t} type="button" onClick={() => reset(mode, t)} aria-pressed={task === t}>
-                  {TASKS[t].label}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-          <fieldset className="mt-4">
-            <legend className="small mb-1.5 font-semibold">Run the private steps on</legend>
-            <div className="switch">
-              {(["hybrid", "cloud"] as const).map((m) => (
-                <button key={m} type="button" onClick={() => reset(m)} aria-pressed={mode === m}>
-                  {m === "hybrid" ? "Your Mac" : "Cloud"}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-
-          <p className="small mt-6 border-t border-rule pt-3">
-            Replay of recorded runs. Credit and time figures were measured on my own Perplexity account on a made-up bank file ({data.txnCount} rows). This is a standalone prototype and does not hook into Perplexity&apos;s product.
-          </p>
-          <p className="small mt-2">
-            <Link href="/">Read the case study</Link>
-          </p>
-          <p className="small mt-1">
-          </p>
-        </div>
-
-        <div className="tape-wrap min-w-0">
-          <div className="tape">
-            <p className="font-mono text-lg font-bold tracking-tight">RUN RECEIPT</p>
-            <p className="mt-1 text-[0.9375rem] leading-relaxed text-ink2">&ldquo;{TASKS[task].prompt}&rdquo;</p>
-            <p className="small mt-1">
-              {TASKS[task].label}, private steps on {mode === "hybrid" ? "your Mac" : "the cloud"}. Recorded run {lane.run.id}.
-            </p>
-
-            <hr className="tear" />
-            <section className="receipt-before"><Head>Before: the run plan</Head>
-            <ol className="mt-3">
+      <section className="pv cost" aria-labelledby="pv-cost">
+        <ProblemSide id="pv-cost" {...PROBLEMS.cost} />
+        <div className="tape">
+          <Head>Before you send</Head>
+          <p className="pv-prompt">&ldquo;{TASKS[task].prompt}&rdquo;</p>
+          {lane.estimate ? (
+            <dl className="mt-4 space-y-2">
+              <Item label="This run will cost" value={`${span(lane.estimate.credits, credits)} credits`} note={`from ${lane.estimate.credits.n} measured ${lane.estimate.credits.n === 1 ? "run" : "runs"} of this task`} strong />
+              <Item label="It will take" value={lane.estimate.seconds ? span(lane.estimate.seconds, duration) : "not timed"} note="from the app or screenshot timestamps" />
+            </dl>
+          ) : (
+            <p className="small mt-3">No past runs of this task, so no range yet.</p>
+          )}
+          <button type="button" onClick={play} className="btn mt-5">
+            {stage === "plan" ? "Send this run" : "Send it again"}
+          </button>
+          <details className="fold">
+            <summary>Where each step will run</summary>
+            <ol className="mt-2">
               {steps.map((s, i) => (
                 <li key={s.name} className="grid grid-cols-[1.5rem_minmax(0,1fr)] border-b border-grid py-2.5 last:border-b-0">
                   <span className="fig text-ink3">{i + 1}</span>
@@ -165,66 +174,106 @@ export default function Replay({ data }: { data: ReplayData }) {
                 </li>
               ))}
             </ol>
-            {lane.estimate && (
-              <dl className="mt-4 space-y-2">
-                <Item label="Credits for the run" value={span(lane.estimate.credits, credits)} note={`${lane.estimate.credits.n} measured ${lane.estimate.credits.n === 1 ? "run" : "runs"}`} strong />
-                <Item label="Time" value={lane.estimate.seconds ? span(lane.estimate.seconds, duration) : "not timed"} note={lane.run.secondsNote ?? "from the app or screenshot timestamps"} />
-                <Item label="Panel reads low at Finished by" value={lane.estimate.undercountPct ? span(lane.estimate.undercountPct, pct) : "no reading"} note="final charge lands later" />
-              </dl>
-            )}
             <p className="small mt-3">The plan is the prototype&apos;s own. Perplexity shows one total per run, so the range is for the whole run, not per step.</p>
-            {stage === "plan" && (
-              <button type="button" onClick={() => setStage("running")} className="btn mt-5">
-                Replay this run
-              </button>
-            )}
-
-            </section>
-            {stage !== "plan" && (
-              <div ref={meterRef} className="print receipt-during scroll-mt-6 scroll-mb-6">
-                <hr className="tear" />
-                <Head>While it runs: the meter</Head>
-                <Meter lane={lane} steps={steps} stage={stage} progress={progress} />
-              </div>
-            )}
-
-            {stage === "final" && (
-              <div className="print receipt-after">
-                <hr className="tear" />
-                <Head>After: the receipt</Head>
-                {task === "report" ? (
-                  <Receipt data={data} lane={data[mode]} showWithheld={showWithheld} onShowWithheld={() => setShowWithheld(true)} rerun={rerun} onRerun={() => setRerun(true)} />
-                ) : (
-                  <BudgetReceipt lane={data.budget[mode]} other={data.budget[mode === "hybrid" ? "cloud" : "hybrid"]} filled={showWithheld} onFill={() => setShowWithheld(true)} />
-                )}
-                <hr className="tear" />
-                <div className="leader text-xl font-bold">
-                  <span>TOTAL</span>
-                  <span className="dots" />
-                  <span className="fig">{credits(lane.run.final)} credits</span>
-                </div>
-                <p className="small mt-1 text-right">
-                  about {money(lane.run.final / 100)}, {lane.finalReadNote}
-                </p>
-                <button type="button" onClick={() => reset()} className="btn btn-quiet mt-5">
-                  Start over
-                </button>
-              </div>
-            )}
-          </div>
+          </details>
         </div>
-      </div>
+      </section>
 
-      <section className="mt-20">
-        <h2 className="mb-5 text-[1.75rem] leading-tight font-bold tracking-tight">The measured runs behind these numbers</h2>
-        <Measured groups={data.groups} headline={data.headline} />
+      <section className="pv meter" aria-labelledby="pv-meter" ref={meterRef}>
+        <ProblemSide id="pv-meter" {...PROBLEMS.meter} />
+        <div className="tape">
+          <Head>While it runs</Head>
+          <Meter lane={lane} steps={steps} stage={stage} progress={progress} />
+          {lane.estimate?.undercountPct && (
+            <p className="pv-fact">
+              On past runs of this task, the count at Finished was <b className="fig">{span(lane.estimate.undercountPct, pct)}</b> below the final charge.
+            </p>
+          )}
+          {(stage === "plan" || stage === "final") && (
+            <button type="button" onClick={play} className="btn btn-quiet mt-4">
+              {stage === "plan" ? "Play the count" : "Play it again"}
+            </button>
+          )}
+        </div>
+      </section>
+
+      <section className="pv hybrid" aria-labelledby="pv-hybrid">
+        <ProblemSide id="pv-hybrid" {...PROBLEMS.hybrid} />
+        <div className="tape">
+          <Head>After</Head>
+          <p className="pv-ran">
+            <span>Where the steps ran</span>
+            {ranOn.map((r) => (
+              <span key={r.route} className={ROUTE_CHIP[r.route]}>
+                {r.route} · {r.count}
+              </span>
+            ))}
+          </p>
+          {task === "report" ? (
+            <Receipt data={data} lane={data[mode]} showWithheld={showWithheld} onShowWithheld={() => setShowWithheld((v) => !v)} rerun={rerun} onRerun={() => setRerun((v) => !v)} />
+          ) : (
+            <BudgetReceipt lane={data.budget[mode]} other={data.budget[mode === "hybrid" ? "cloud" : "hybrid"]} filled={showWithheld} onFill={() => setShowWithheld((v) => !v)} />
+          )}
+          <hr className="tear" />
+          <div className="leader text-xl font-bold">
+            <span>TOTAL</span>
+            <span className="dots" />
+            <span className="fig">{credits(lane.run.final)} credits</span>
+          </div>
+          <p className="small mt-1 text-right">
+            about {money(lane.run.final / 100)}, {lane.finalReadNote}
+          </p>
+        </div>
+      </section>
+
+      <section className="proto-try" aria-labelledby="pv-try">
+        <h2 id="pv-try">Try another recorded run</h2>
+        <div className="proto-switches">
+          <fieldset>
+            <legend className="small mb-1.5 font-semibold">Task</legend>
+            <div className="switch">
+              {(Object.keys(TASKS) as Task[]).map((t) => (
+                <button key={t} type="button" onClick={() => reset(mode, t)} aria-pressed={task === t}>
+                  {TASKS[t].label}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend className="small mb-1.5 font-semibold">Private steps ran on</legend>
+            <div className="switch">
+              {(["hybrid", "cloud"] as const).map((m) => (
+                <button key={m} type="button" onClick={() => reset(m)} aria-pressed={mode === m}>
+                  {m === "hybrid" ? "My Mac (Hybrid)" : "Cloud"}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+        </div>
+        <p className="small mt-5 max-w-[70ch]">
+          A replay of recorded runs. Credit and time figures were measured on my own Perplexity account, on a made-up bank file ({data.txnCount} rows). This is a standalone prototype and does not hook into Perplexity&apos;s product.
+        </p>
+        <p className="small mt-2">
+          <Link href="/evidence">The measured runs behind these numbers</Link> · <Link href="/router">How my own router splits the work</Link>
+        </p>
       </section>
     </main>
   );
 }
 
+function ProblemSide({ id, n, title, answer }: { id: string; n: string; title: string; answer: string }) {
+  return (
+    <div className="pv-problem">
+      <p className="pv-n" aria-hidden="true">{n}</p>
+      <p className="pv-label">Problem {n}</p>
+      <h2 id={id}>{title}</h2>
+      <p className="pv-answer">{answer}</p>
+    </div>
+  );
+}
+
 function Head({ children }: { children: React.ReactNode }) {
-  return <h2 className="tape-head">{children}</h2>;
+  return <h3 className="tape-head">{children}</h3>;
 }
 
 // Label ..... figure, with a line of small print under it.
@@ -241,49 +290,15 @@ function Item({ label, value, note, strong }: { label: string; value: string; no
   );
 }
 
-function Measured({ groups, headline: h }: { groups: Group[]; headline: Headline }) {
+// The headline of the After view: one count, one stamp, one plain sentence.
+function Verdict({ right, total, what, ok, note }: { right: number; total: number; what: string; ok: boolean; note: string }) {
   return (
-    <div>
-      <dl className="grid max-w-[60rem] gap-x-14 gap-y-3 md:grid-cols-2">
-        <Item label="Panel read below the final charge" value={`${h.panelLow} of ${h.panelReadings} runs`} note={`by ${span(h.panelLowPct, pct)} at the Finished screenshot`} strong />
-        <Item label="Hybrid on, something ran on the Mac" value={`${h.hybridRanLocal} of ${h.hybridOn} runs`} note="only when the Privacy Gate appeared" strong />
-        <Item
-          label="Same prompt, same setting"
-          value={`${span(h.widestRepeat.credits, credits)} credits`}
-          note={`${h.widestRepeat.label}, ${h.widestRepeat.credits.n} runs, ${h.widestRepeat.spreadPct}% apart`}
-          strong
-        />
-        {h.effort && <Item label="High effort vs Standard, same prompt" value={`${h.effort.times}x the credits`} note={`${credits(h.effort.high)} vs ${credits(h.effort.standard)}, one run each, web only`} strong />}
-      </dl>
-      <div className="scroll-x mt-8" tabIndex={0} role="region" aria-label="Measured runs table">
-        <table className="data min-w-[40rem]">
-          <thead>
-            <tr>
-              <th>Task</th>
-              <th>Setting</th>
-              <th className="num">Runs</th>
-              <th className="num">Credits</th>
-              <th className="num">Time</th>
-              <th className="num">Panel low by</th>
-            </tr>
-          </thead>
-          <tbody>
-            {groups.map((g, i) => (
-              <tr key={g.task + g.setting}>
-                <td className="font-semibold">{groups[i - 1]?.task === g.task ? "" : g.label}</td>
-                <td className="text-ink2">{g.setting}</td>
-                <td className="num fig">{g.credits.n}</td>
-                <td className="num fig">{span(g.credits, credits)}</td>
-                <td className="num fig">{g.seconds ? span(g.seconds, duration) : "not timed"}</td>
-                <td className="num fig">{g.undercountPct ? span(g.undercountPct, pct) : "no reading"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="small mt-4 max-w-[70ch]">
-        {h.runs} runs across {h.taskTypes} task types, measured Oct 2 to Oct 8, 2026 on one account. A range is the lowest and highest value seen, so a row with one run has no spread yet. Runs are never pooled across the Mac app and the web, across effort levels, or across whether a local step ran. Most times come from the app; a few come from screenshot timestamps.
+    <div className="pv-verdict">
+      <p className="pv-verdict-line">
+        <span className="fig">{right} of {total}</span> {what}
+        <span className={`stamp ${ok ? "stamp-pass" : "stamp-fail"}`}>{ok ? "ALL MATCH" : "CAUGHT"}</span>
       </p>
+      <p className="small">{note}</p>
     </div>
   );
 }
@@ -328,7 +343,7 @@ function Meter({ lane, steps, stage, progress }: { lane: { mode: Mode; run: Pane
           </span>
         ) : (
           <span key="prov" className={`chip mark-prov mb-2 text-[0.8125rem]! ${stage === "finished" ? "pulse" : ""}`}>
-            PROVISIONAL, still counting
+            {stage === "plan" ? "PROVISIONAL" : "PROVISIONAL, still counting"}
           </span>
         )}
       </div>
@@ -341,7 +356,9 @@ function Meter({ lane, steps, stage, progress }: { lane: { mode: Mode; run: Pane
       </div>
 
       <p className="mt-3 min-h-[3.2em] text-[0.9375rem]" aria-live="polite">
-        {stage === "running" ? (
+        {stage === "plan" ? (
+          <>The count starts when the run is sent.</>
+        ) : stage === "running" ? (
           <>
             <span className="fig text-ink3">
               {step + 1}/{steps.length}
@@ -360,7 +377,7 @@ function Meter({ lane, steps, stage, progress }: { lane: { mode: Mode; run: Pane
         )}
       </p>
       <p className="small mt-2">
-        Replayed in {REPLAY_MS / 1000} s. The real run took {run.secondsNote ?? (run.seconds === null ? "an unrecorded time" : duration(run.seconds))}.
+        Replayed in {REPLAY_MS / 1000} s. The real run took {run.secondsNote && /^(about|\d)/.test(run.secondsNote) ? run.secondsNote : `${run.seconds === null ? "an unrecorded time" : duration(run.seconds)}${run.secondsNote ? ` (${run.secondsNote})` : ""}`}.
         {run.localTokens ? ` Local model used about ${(run.localTokens / 1000).toFixed(1)}K tokens on the Mac.` : ""} Step order during the replay is illustrative; only the run totals were measured.
       </p>
     </div>
@@ -385,36 +402,21 @@ function Receipt({
   const other = lane.mode === "hybrid" ? data.cloud : data.hybrid;
   const failed = lane.checks.filter((c) => !c.passed).length;
   return (
-    <div className="mt-3 space-y-7">
-      <dl className="space-y-2">
-        <Item label="Final credits" value={credits(lane.run.final)} note={`about ${money(lane.run.final / 100)}`} strong />
-        {lane.mode === "hybrid" ? (
-          <>
-            <Item label="Saved by local work" value={credits(other.run.final - lane.run.final)} note={`vs the recorded cloud run (${credits(other.run.final)})`} />
-            <Item label="Time added by local work" value={duration(lane.run.seconds - other.run.seconds)} note="at least; cloud time is an upper bound" />
-          </>
-        ) : (
-          <>
-            <Item label="Extra vs running on your Mac" value={credits(lane.run.final - other.run.final)} note={`recorded Hybrid run cost ${credits(other.run.final)}`} />
-            <Item label="Totals right" value={`${lane.totalsRight} of ${lane.rows.length}`} note="graded against the answer key" />
-          </>
-        )}
-      </dl>
-
-      <div>
-        <ChecksHeading failed={failed} total={lane.checks.length} />
-        <CheckList checks={lane.checks} />
-        <p className="small mt-2">This is a test file with a known answer, so the recorded report is graded against totals recomputed in code. Perplexity does not expose the row labels of its own run.</p>
-      </div>
-
-      <Totals rows={lane.rows} heading="Totals in the report" />
+    <div className="mt-4 space-y-5">
+      <Verdict
+        right={lane.totalsRight}
+        total={lane.rows.length}
+        what="category totals match your file"
+        ok={failed === 0}
+        note={failed === 0 ? "Code recomputed every total from your file and compared it with the report." : "Code recomputed every total from your file. The numbers in the report did not match, and the receipt says so."}
+      />
 
       {lane.withheld.length > 0 && (
-        <div className="border border-dashed border-ink3 p-3.5 text-[0.9375rem]">
+        <div className="pv-box">
           <p>
-            Withheld from the cloud and missing from your own report: <strong>{lane.withheld.map((w) => w.category).join(", ")}</strong>.
+            Withheld from the cloud, and missing from your own report: <strong>{lane.withheld.map((w) => w.category).join(", ")}</strong>.
           </p>
-          {showWithheld ? (
+          {showWithheld && (
             <ul className="line-in mt-2">
               {lane.withheld.map((w) => (
                 <li key={w.category}>
@@ -422,60 +424,82 @@ function Receipt({
                 </li>
               ))}
             </ul>
-          ) : (
-            <button type="button" onClick={onShowWithheld} className="btn btn-quiet mt-3">
-              Show withheld values here, on this Mac only
-            </button>
           )}
+          <button type="button" onClick={onShowWithheld} className="btn btn-quiet mt-3" aria-expanded={showWithheld}>
+            {showWithheld ? "Hide the withheld values" : "Show them here, on this Mac only"}
+          </button>
         </div>
       )}
 
       {lane.mode === "hybrid" && failed > 0 && data.rerunGap && (
-        <div className="bg-[color-mix(in_oklab,var(--prov)_28%,var(--sheet))] p-3.5 text-[0.9375rem]">
-          {rerun ? (
-            <div className="line-in">
+        <div className="pv-box pv-repair">
+          <p className="font-semibold">
+            Repair: rerun in the cloud for about <span className="fig">{span(data.rerunGap, credits)}</span> more credits?
+          </p>
+          <p className="small mt-1">
+            Estimate: the measured gap between cloud and Hybrid runs of this task, {data.rerunGap.n} runs each. A single-step rerun was not measured.
+          </p>
+          <button type="button" onClick={onRerun} className="btn mt-3" aria-expanded={rerun}>
+            {rerun ? "Hide the cloud result" : "Show the cloud result"}
+          </button>
+          {rerun && (
+            <div className="line-in mt-4">
               <p className="mb-3 font-semibold">
-                Recorded cloud run of the same task: {data.cloud.totalsRight} of {data.cloud.rows.length} totals right, <span className="fig">{credits(data.cloud.run.final)}</span> credits.
+                Recorded cloud run of the same task: {data.cloud.totalsRight} of {data.cloud.rows.length} totals match, <span className="fig">{credits(data.cloud.run.final)}</span> credits.
               </p>
-              <Totals rows={data.cloud.rows} heading="Totals after the cloud rerun" />
+              <Totals rows={data.cloud.rows} heading="Totals in the cloud run" />
             </div>
-          ) : (
-            <>
-              <p className="font-semibold">
-                The local totals do not match the file. Rerun in the cloud for about <span className="fig">{span(data.rerunGap, credits)}</span> more credits?
-              </p>
-              <p className="small mt-1">
-                Estimate: the measured gap between cloud and Hybrid runs of this task, {data.rerunGap.n} runs each. A single-step rerun was not measured.
-              </p>
-              <button type="button" onClick={onRerun} className="btn mt-3">
-                Show the cloud result
-              </button>
-            </>
           )}
         </div>
       )}
 
-      {lane.mode === "hybrid" && (
-        <div className="border-t border-rule pt-5 text-[0.9375rem]">
-          <h3 className="font-bold">The same local step, with totals computed by code</h3>
-          <p className="small mt-1">
-            Recorded {data.router.date} on my own router: {data.router.worker}, {data.router.seconds} s. One recorded run, so read it as an illustration. The model only assigns categories; code adds them up. Categorize step only, so it has no Perplexity credit figure.
-          </p>
-          <div className="mt-3">
-            <CheckList checks={data.router.checks} />
+      <details className="fold">
+        <summary>
+          The {lane.checks.length} checks behind this, and every total
+        </summary>
+        <div className="mt-3 space-y-6">
+          <div>
+            <ChecksHeading failed={failed} total={lane.checks.length} />
+            <CheckList checks={lane.checks} />
+            <p className="small mt-2">This is a test file with a known answer, so the recorded report is graded against totals recomputed in code. Perplexity does not expose the row labels of its own run.</p>
           </div>
-          <p className="mt-3">
-            Totals add up to the file, yet only {data.router.totalsRight} of {data.router.rows.length} category totals match the key, because {data.router.labels.mislabels.length} of {data.router.labels.total} rows are in the wrong category. A sum check alone does not catch this, so the receipt lists rows to confirm:
-          </p>
-          <ul className="mt-2 space-y-1">
-            {data.router.labels.mislabels.map((m) => (
-              <li key={m.id}>
-                {m.description}, <span className="fig">{money(Math.abs(m.amount))}</span>: filed under {m.got}, key says {m.expected}
-                {m.judgementCall && <span className="small"> (judgement call: Perplexity&apos;s cloud run also chose {m.got} once)</span>}
-              </li>
-            ))}
-          </ul>
+          <Totals rows={lane.rows} heading="Totals in the report" />
+          <dl className="space-y-2">
+            {lane.mode === "hybrid" ? (
+              <>
+                <Item label="Credits against the cloud run" value={`${credits(other.run.final - lane.run.final)} fewer`} note={`the recorded cloud run cost ${credits(other.run.final)}`} />
+                <Item label="Time added by the local step" value={duration(lane.run.seconds - other.run.seconds)} note="at least; cloud time is an upper bound" />
+              </>
+            ) : (
+              <Item label="Credits against the Hybrid run" value={`${credits(lane.run.final - other.run.final)} more`} note={`the recorded Hybrid run cost ${credits(other.run.final)}`} />
+            )}
+          </dl>
         </div>
+      </details>
+
+      {lane.mode === "hybrid" && (
+        <details className="fold">
+          <summary>What changes when code does the sums</summary>
+          <div className="mt-3 text-[0.9375rem]">
+            <p className="small">
+              Recorded {data.router.date} on my own router: {data.router.worker}, {data.router.seconds} s. One recorded run, so read it as an illustration. The model only assigns categories; code adds them up. Categorize step only, so it has no Perplexity credit figure.
+            </p>
+            <div className="mt-3">
+              <CheckList checks={data.router.checks} />
+            </div>
+            <p className="mt-3">
+              Totals add up to the file, yet only {data.router.totalsRight} of {data.router.rows.length} category totals match the key, because {data.router.labels.mislabels.length} of {data.router.labels.total} rows are in the wrong category. A sum check alone does not catch this, so the receipt lists rows to confirm:
+            </p>
+            <ul className="mt-2 space-y-1">
+              {data.router.labels.mislabels.map((m) => (
+                <li key={m.id}>
+                  {m.description}, <span className="fig">{money(Math.abs(m.amount))}</span>: filed under {m.got}, key says {m.expected}
+                  {m.judgementCall && <span className="small"> (judgement call: Perplexity&apos;s cloud run also chose {m.got} once)</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </details>
       )}
     </div>
   );
@@ -487,28 +511,21 @@ function BudgetReceipt({ lane, other, filled, onFill }: { lane: SheetLane; other
   const short = lane.gaps.filter((g) => g.field === "description");
   const diff = lane.run.final - other.run.final;
   const now = filled ? lane.repaired : lane.shown;
+  const hasGaps = lane.gaps.length + lane.missingDates > 0;
   return (
-    <div className="mt-3 space-y-7">
-      <dl className="space-y-2">
-        <Item label="Final credits" value={credits(lane.run.final)} note={`about ${money(lane.run.final / 100)}`} strong />
-        <Item
-          label={lane.mode === "hybrid" ? "Vs the recorded cloud run" : "Vs the recorded Hybrid run"}
-          value={`${diff > 0 ? "+" : "-"}${credits(Math.abs(diff))} credits`}
-          note={`the other run cost ${credits(other.run.final)}${lane.run.seconds !== null && other.run.seconds === null ? `; this one took ${duration(lane.run.seconds)}` : ""}`}
-        />
-        <Item label="Rows complete" value={`${lane.completeRows} of ${lane.rowCount}`} note="date, description and amount all match the file" />
-      </dl>
+    <div className="mt-4 space-y-5">
+      <Verdict
+        right={lane.completeRows}
+        total={lane.rowCount}
+        what="rows are complete"
+        ok={failed === 0}
+        note={failed === 0 ? "Every date, description and amount in the spreadsheet matches your file." : "Code compared the spreadsheet with your file, row by row. Some cells came back blank or changed."}
+      />
 
-      <div>
-        <ChecksHeading failed={failed} total={lane.checks.length} />
-        <CheckList checks={lane.checks} />
-        <p className="small mt-2">No answer key is used here. Each check compares the spreadsheet the run produced with the file it was built from, row by row.</p>
-      </div>
-
-      {lane.gaps.length + lane.missingDates > 0 && (
-        <div className="bg-[color-mix(in_oklab,var(--prov)_28%,var(--sheet))] p-3.5 text-[0.9375rem]">
+      {hasGaps && (
+        <div className="pv-box pv-repair">
           <p>
-            Withheld from the cloud and left blank in your own spreadsheet: <strong>{blanks.length} amounts</strong>, <strong>{lane.missingDates} dates</strong>
+            Withheld from the cloud, and left blank in your own spreadsheet: <strong>{blanks.length} amounts</strong>, <strong>{lane.missingDates} dates</strong>
             {short.length > 0 && (
               <>
                 {" "}
@@ -517,7 +534,10 @@ function BudgetReceipt({ lane, other, filled, onFill }: { lane: SheetLane; other
             )}
             . {lane.disclosed ? "The run did say so in its reply and highlighted the cells." : "The run did not mention it."}
           </p>
-          {filled ? (
+          <button type="button" onClick={onFill} className="btn mt-3" aria-expanded={filled}>
+            {filled ? "Hide the filled-in values" : "Repair: fill them in here, on this Mac only"}
+          </button>
+          {filled && (
             <div className="line-in">
               <ul className="mt-3 space-y-1">
                 {blanks.map((g) => (
@@ -529,48 +549,63 @@ function BudgetReceipt({ lane, other, filled, onFill }: { lane: SheetLane; other
               </ul>
               <p className="small mt-2">Filled in for 0 Perplexity credits: the values come from the file the run started with. In this replay that is the test file bundled with the page.</p>
             </div>
-          ) : (
-            <button type="button" onClick={onFill} className="btn mt-3">
-              Fill them in here, on this Mac only
-            </button>
           )}
         </div>
       )}
 
-      <div className="scroll-x">
-        <table className="data">
-          <caption>{filled ? "Summary sheet, before and after filling the blanks" : "Summary sheet as it opens"}</caption>
-          <thead>
-            <tr>
-              <th>Category (the run&apos;s own labels)</th>
-              <th className="num">As delivered</th>
-              {filled && <th className="num">With your file&apos;s values</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {lane.totals.map((t) => {
-              const changed = t.shown !== t.repaired;
-              return (
-                <tr key={t.category}>
-                  <td>{t.category}</td>
-                  <td className={`num fig ${changed ? "bad" : ""}`}>{signed(t.shown)}</td>
-                  {filled && <td className={`num fig ${changed ? "font-bold" : ""}`}>{signed(t.repaired)}</td>}
+      <details className="fold">
+        <summary>
+          The {lane.checks.length} checks behind this, and the summary sheet
+        </summary>
+        <div className="mt-3 space-y-6">
+          <div>
+            <ChecksHeading failed={failed} total={lane.checks.length} />
+            <CheckList checks={lane.checks} />
+            <p className="small mt-2">No answer key is used here. Each check compares the spreadsheet the run produced with the file it was built from, row by row.</p>
+          </div>
+          <div className="scroll-x">
+            <table className="data">
+              <caption>{filled ? "Summary sheet, before and after filling the blanks" : "Summary sheet as it opens"}</caption>
+              <thead>
+                <tr>
+                  <th>Category (the run&apos;s own labels)</th>
+                  <th className="num">As delivered</th>
+                  {filled && <th className="num">With your file&apos;s values</th>}
                 </tr>
-              );
-            })}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td>Net for the month</td>
-              <td className={`num fig ${lane.shown.net !== lane.repaired.net ? "bad" : ""}`}>{signed(lane.shown.net)}</td>
-              {filled && <td className="num fig">{signed(lane.repaired.net)}</td>}
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-      <p className="small">
-        Money in {money(now.moneyIn)}, money out {money(now.moneyOut)}. The file itself says {money(lane.repaired.moneyIn)} in and {money(lane.repaired.moneyOut)} out.
-      </p>
+              </thead>
+              <tbody>
+                {lane.totals.map((t) => {
+                  const changed = t.shown !== t.repaired;
+                  return (
+                    <tr key={t.category}>
+                      <td>{t.category}</td>
+                      <td className={`num fig ${changed ? "bad" : ""}`}>{signed(t.shown)}</td>
+                      {filled && <td className={`num fig ${changed ? "font-bold" : ""}`}>{signed(t.repaired)}</td>}
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td>Net for the month</td>
+                  <td className={`num fig ${lane.shown.net !== lane.repaired.net ? "bad" : ""}`}>{signed(lane.shown.net)}</td>
+                  {filled && <td className="num fig">{signed(lane.repaired.net)}</td>}
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <p className="small">
+            Money in {money(now.moneyIn)}, money out {money(now.moneyOut)}. The file itself says {money(lane.repaired.moneyIn)} in and {money(lane.repaired.moneyOut)} out.
+          </p>
+          <dl className="space-y-2">
+            <Item
+              label={lane.mode === "hybrid" ? "Credits against the cloud run" : "Credits against the Hybrid run"}
+              value={`${credits(Math.abs(diff))} ${diff > 0 ? "more" : "fewer"}`}
+              note={`the other run cost ${credits(other.run.final)}${lane.run.seconds !== null && other.run.seconds === null ? `; this one took ${duration(lane.run.seconds)}` : ""}`}
+            />
+          </dl>
+        </div>
+      </details>
     </div>
   );
 }
@@ -578,16 +613,15 @@ function BudgetReceipt({ lane, other, filled, onFill }: { lane: SheetLane; other
 // The moment a check fails is the second thing a viewer should remember, so the count leads.
 function ChecksHeading({ failed, total }: { failed: number; total: number }) {
   return (
-    <h3 className="mb-2 text-xl leading-tight font-bold">
-      Checks:{" "}
+    <h4 className="mb-2 text-base leading-tight font-bold">
       {failed === 0 ? (
-        <span className="good">all {total} passed</span>
+        <span className="good">All {total} checks matched your file</span>
       ) : (
         <span className="bad">
-          {failed} of {total} failed
+          {failed} of {total} checks caught a mismatch
         </span>
       )}
-    </h3>
+    </h4>
   );
 }
 
@@ -597,7 +631,7 @@ function CheckList({ checks }: { checks: Check[] }) {
       {checks.map((c, i) => (
         <li key={c.name} className="line-in grid grid-cols-[4.75rem_minmax(0,1fr)] items-baseline gap-x-2 border-b border-grid py-2 text-[0.9375rem] last:border-b-0" style={{ "--i": i } as React.CSSProperties}>
           <span>
-            <span className={`stamp ${c.passed ? "stamp-pass" : "stamp-fail"}`}>{c.passed ? "PASSED" : "FAILED"}</span>
+            <span className={`stamp ${c.passed ? "stamp-pass" : "stamp-fail"}`}>{c.passed ? "MATCH" : "CAUGHT"}</span>
           </span>
           <span className="flex flex-wrap items-baseline justify-between gap-x-4">
             <span className={c.passed ? "" : "font-semibold"}>{c.name}</span>

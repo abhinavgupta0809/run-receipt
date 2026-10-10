@@ -1,10 +1,9 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { Metadata } from "next";
-import { checkOutput, coverage, disagreements, parsePrices, skillFile, type App } from "@/lib/skill.ts";
+import { checkOutput, disagreements, parsePrices, skillFile, type App } from "@/lib/skill.ts";
 import { range, type Run } from "@/lib/estimate.ts";
 import { credits, span } from "../format";
-import Builder from "./builder";
 import Demo from "./demo";
 
 export const metadata: Metadata = {
@@ -100,20 +99,57 @@ export default function SkillPage() {
         />
       </section>
 
-      <section aria-labelledby="builder" className="sk-builder">
-        <h2 id="builder" className="sum-h2">The working builder</h2>
-        <p className="sk-intro">The same {sessions.length} sessions, step by step: what the runs disagreed on, the rules, and the test your past outputs fail. Plain code, no model.</p>
-        <details>
-          <summary>Open the working builder</summary>
-          <Builder
-            prompt={s.prompt}
-            variation={s.variation}
-            sessions={sessions.map((x) => ({ runId: x.runId, when: x.when, credits: x.credits, seconds: x.seconds, checks: x.checks }))}
-            disagreements={diffs}
-            coverage={coverage(sessions)}
-            cost={cost}
-          />
+      <section aria-labelledby="result" className="sk-result">
+        <h2 id="result" className="sum-h2">From {sessions.length} runs to one skill</h2>
+        <p className="sk-intro">This is the task from the demo, for real: one prompt I ran {sessions.length} times, and the skill those runs turn into.</p>
+        <div className="sk-out">
+          <div className="sk-runs">
+            <h3>You did this {sessions.length} times</h3>
+            <p className="sk-prompt">&ldquo;{s.prompt}&rdquo;</p>
+            <ol>
+              {sessions.map((x) => (
+                <li key={x.runId}>
+                  <span>Run {x.runId}</span>
+                  <span className="sk-when">{x.when}</span>
+                  <b className="fig">{credits(x.credits)} credits</b>
+                </li>
+              ))}
+            </ol>
+            {d && (
+              <p className="sk-diff">
+                The answers disagreed once: <b>{d.plan}</b> came back at {d.values.map((v) => usd(v.value)).join(", ")} a month. So the skill checks its own result.
+              </p>
+            )}
+          </div>
+          <div className="sk-arrow" aria-hidden="true">
+            <svg width="44" height="24" viewBox="0 0 44 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h38M32 4l8 8-8 8" /></svg>
+          </div>
+          <div className="sk-card">
+            <p className="sk-card-top"><span>The skill</span><code className="fig">{command}</code></p>
+            <h3>{SKILL_NAME}</h3>
+            <dl>
+              <div>
+                <dt>What it does</dt>
+                <dd>{s.prompt}</dd>
+              </div>
+              <div>
+                <dt>What it checks before showing a result</dt>
+                <dd>
+                  <ul>{checkNames.map((c) => <li key={c}>{c}</li>)}</ul>
+                </dd>
+              </div>
+              <div>
+                <dt>What it will cost</dt>
+                <dd><b className="fig">{span(cost, credits)} credits</b>, from your {cost.n} runs</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+        <details className="fold sk-fold">
+          <summary>The skill file itself, in Markdown</summary>
+          <pre className="demo-file sk-raw">{file}</pre>
         </details>
+        <p className="sum-note sk-after">A prototype. The skill is written by plain code from the {sessions.length} saved outputs, with no model in the loop, and does not hook into Perplexity&apos;s product.</p>
       </section>
     </main>
   );

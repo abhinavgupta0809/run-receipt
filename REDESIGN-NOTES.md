@@ -315,3 +315,29 @@ Fixed after the pass:
 Left for you:
 - The page states problems and a fix but never says what you would measure if Perplexity shipped it. One line on that would help a Growth reader.
 - The prototype tab opens on the plan. A reader who does not press "Replay this run" never sees the meter. Consider auto-playing once on first load.
+
+## 2026-10-09: restructure after the designer review
+
+Abhinav's brief: a visitor should see the problem, why it is a problem, and the fix, in that order.
+
+- **Home (`/`):** the hero now states the problem with numbers (the three prices for one prompt), then
+  why it matters (meter, Hybrid, 202 reviews), then the fix. The bio is a byline. Sections run:
+  problems, users say it too, the fix, metrics, how I worked, limits. The hero avoids the claim
+  "nothing estimates the cost before you send", which is still unconfirmed against Plan Previews
+  (see the note above). Problem card 1 still carries that sentence.
+- **Tabs:** "The problem / Evidence / Prototype / Session to Skill". The reviews dashboard link is live
+  (`dashboardUrl` in `data/research.json` and `scripts/sync-research.mjs`).
+- **Prototype (`/receipt`):** three stacked views, each headed by its problem: Before you send, While
+  it runs, After. The meter plays once by itself when it scrolls into view. Checks, tables, the step
+  plan and the code-checked local step sit behind folds. The task and mode switches moved to "Try
+  another recorded run" at the bottom. The runs table left this page; the router notes moved to
+  `/router`, linked from the bottom.
+- **Wording:** the same run reads "0 of 8 totals match" with a CAUGHT stamp everywhere. "9 of 9
+  failed" read as if the receipt had failed.
+- **Colour:** red means caught or wrong, green means matched (`--wrong`, `--right`). Hybrid's own tone
+  moved from green to violet so green is free to mean "matched".
+- **Evidence (`/evidence`):** five charts in problem order, each titled with its finding, plus two
+  screenshot cards. Tables and method sit behind folds. The old page is in git history (5a9332b).
+- **Session to Skill (`/skill`):** the working builder is replaced by "From 3 runs to one skill": the
+  three runs on the left, the skill they become on the right, the Markdown file behind a fold.
+  `app/skill/builder.tsx` is no longer used.
