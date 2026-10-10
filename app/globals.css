@@ -714,25 +714,25 @@ h1, .exhibit-title h3 { font-family:var(--font-serif), Georgia, serif; }
 }
 
 
-/* ---- Chart motion: marks play in once when a chart scrolls into view (armed by app/motion.tsx) ---- */
+/* ---- Chart motion: marks play in once, the first time a chart scrolls into view (armed by app/motion.tsx) ---- */
 .m-grow-x, .m-grow-y, .m-pop { transform-box:fill-box; }
 .m-grow-x { transform-origin:left center; }
 .m-grow-y { transform-origin:center bottom; }
 .m-pop { transform-origin:center; }
 [data-motion="wait"] .m-grow-x { transform:scaleX(0); }
 [data-motion="wait"] .m-grow-y { transform:scaleY(0); }
-[data-motion="wait"] .m-pop { transform:scale(0); opacity:0; }
+[data-motion="wait"] .m-pop { transform:scale(.6); opacity:0; }
 [data-motion="wait"] .m-fade { opacity:0; }
 [data-motion] .m-draw { stroke-dasharray:1; }
 [data-motion="wait"] .m-draw { stroke-dashoffset:1; }
-[data-motion="in"] .m-grow-x { animation:m-grow-x 1.3s cubic-bezier(.16,1,.3,1) both; }
-[data-motion="in"] .m-grow-y { animation:m-grow-y 1.3s cubic-bezier(.16,1,.3,1) both; }
+[data-motion="in"] .m-grow-x { animation:m-grow-x .8s cubic-bezier(.16,1,.3,1) both; }
+[data-motion="in"] .m-grow-y { animation:m-grow-y .8s cubic-bezier(.16,1,.3,1) both; }
 [data-motion="in"] .m-pop { animation:m-pop .6s cubic-bezier(.16,1,.3,1) both; }
 [data-motion="in"] .m-fade { animation:m-fade .9s cubic-bezier(.16,1,.3,1) both; }
-[data-motion="in"] .m-draw { animation:m-draw 1.5s cubic-bezier(.16,1,.3,1) both; }
+[data-motion="in"] .m-draw { animation:m-draw .9s cubic-bezier(.16,1,.3,1) both; }
 @keyframes m-grow-x { from { transform:scaleX(0); } }
 @keyframes m-grow-y { from { transform:scaleY(0); } }
-@keyframes m-pop { from { transform:scale(0); opacity:0; } }
+@keyframes m-pop { from { transform:scale(.6); opacity:0; } }
 @keyframes m-fade { from { opacity:0; transform:translateY(6px); } }
 @keyframes m-draw { from { stroke-dashoffset:1; } to { stroke-dashoffset:0; } }
 
@@ -992,3 +992,144 @@ a:hover { text-decoration-color:var(--brand); }
   .hb.truth li { grid-template-columns:1fr; gap:4px; }
   .hb.truth b { text-align:left; }
 }
+
+/* ---- Third review ---- */
+/* Header: one left edge with the page, a quieter row of tabs with the current one marked. */
+.masthead > div { max-width:1200px; padding-top:12px; }
+.masthead nav a { color:var(--ink2); padding:10px 0 13px; border-bottom:2px solid transparent; transition:color 160ms ease-out; }
+.masthead nav a:first-child { margin-left:0; }
+.masthead nav a[aria-current] { color:var(--ink); font-weight:600; border-bottom-color:var(--brand); }
+@media (hover:hover) and (pointer:fine) { .masthead nav a:hover { color:var(--ink); } }
+.foot-links { display:inline-flex; gap:14px; margin-left:14px; }
+@media (max-width:700px) {
+  .mh-tag, .mh-social { display:none; }
+  .masthead > div > div { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; width:100%; padding-bottom:6px; }
+  .foot-links { display:flex; margin:8px 0 0; }
+}
+
+/* Home hero: tighter figures, the receipt before the byline on a phone. */
+.sum-figure { font-size:clamp(2rem, 2.6vw, 2.25rem); white-space:nowrap; }
+.sum-figure span { white-space:normal; }
+.sum-moment .hero-note { font-size:.75rem; color:var(--ink2); text-align:right; opacity:0; transition:opacity 300ms ease-out; }
+.sum-moment[data-phase="final"] .hero-note, .sum-moment[data-phase="caught"] .hero-note { opacity:1; }
+.hero-count { transition:color 300ms ease-out; }
+.sum-moment[data-phase="wait"] .hero-count, .sum-moment[data-phase="counting"] .hero-count { color:var(--meter-hi); }
+.chip-final { display:inline-block; font-family:var(--font-mono); font-size:.6875rem; font-weight:700; letter-spacing:.08em; line-height:1.4; padding:.05rem .35rem; border-radius:2px; background:var(--ink); color:var(--paper); }
+@keyframes settle-in { from { opacity:0; transform:scale(.96); } }
+.settle-in { animation:settle-in 220ms cubic-bezier(.23,1,.32,1) both; }
+/* The stamp waits for the count to settle. Only when scripts run: without them it is simply there. */
+[data-js] .hero-after[data-phase="wait"] .stamp, [data-js] .hero-after[data-phase="counting"] .stamp, [data-js] .hero-after[data-phase="final"] .stamp { opacity:0; }
+@media (prefers-reduced-motion: reduce) {
+  .settle-in { animation:none; }
+  [data-js] .hero-after .stamp { opacity:1 !important; }
+  .sum-moment .hero-note { opacity:1; transition:none; }
+}
+@media (max-width:900px) {
+  .sum-hero { display:flex; flex-direction:column; gap:0; }
+  .sum-hero > div { display:contents; }
+  .sum-receipt { order:2; margin-top:34px; }
+  .sum-byline { order:3; }
+  .sum-visual { min-height:0; }
+}
+
+/* Reviews dashboard card: live, so it stops looking like a placeholder. */
+.sum-slot.live { border:1px solid color-mix(in oklab, var(--brand) 45%, var(--paper)); background:color-mix(in oklab, var(--brand) 8%, var(--sheet)); }
+.sum-slot.live .sum-slot-tag { color:var(--brand); }
+
+/* Metrics table: quieter row headers, and one stacked block per metric on a phone. */
+.sum-metrics th[scope=row] { border-bottom:1px solid var(--grid); font-size:.875rem; color:var(--ink); }
+@media (max-width:700px) {
+  .sum-metrics, .sum-metrics tbody, .sum-metrics tr, .sum-metrics th, .sum-metrics td { display:block; min-width:0; width:100%; }
+  .sum-metrics thead { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+  .sum-metrics tr { padding:14px 0; border-bottom:1px solid var(--rule); }
+  .sum-metrics th[scope=row], .sum-metrics td { border-bottom:0; padding:0; white-space:normal; }
+  .sum-metrics th[scope=row] { font-size:1rem; }
+  .sum-metrics td { margin-top:10px; }
+  .sum-metrics td::before { display:block; font-size:.6875rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink2); margin-bottom:2px; }
+  .sum-metrics td:nth-of-type(1)::before { content:"How it is counted"; }
+  .sum-metrics td:nth-of-type(2)::before { content:"In my runs"; }
+  .sum-metrics td:nth-of-type(3)::before { content:"Starting bar"; }
+  .sum-metrics td:nth-of-type(4)::before { content:"The decision it controls"; }
+}
+
+/* Path steps: the rule stops at the last step. */
+.sum-path::before { right:calc(20% - 19px); }
+
+/* Evidence: the baseline of each chart takes its problem's colour. Red and green stay the verdict. */
+.pv.cost .hb-base { background:color-mix(in oklab, var(--cost) 62%, var(--ink3)); }
+.pv.meter .col-shown, .pv.meter .k-shown { background:var(--meter); }
+
+/* Prototype: the receipt runs to the section rule; the verdict waits for the run. */
+.pv .tape { max-width:none; }
+.pv-verdict { transition:opacity 300ms ease-out; }
+[data-pending="true"] .pv-verdict { opacity:.4; }
+[data-pending="true"] .pv-chip { visibility:hidden; }
+[data-pending="false"] .pv-chip { animation:settle-in 220ms cubic-bezier(.23,1,.32,1) .9s both; }
+@media (prefers-reduced-motion: reduce) { [data-pending="false"] .pv-chip { animation:none; } }
+
+/* Press feedback on the small controls. */
+.switch button, .demo-steps button { transition:background 160ms ease-out, color 160ms ease-out, border-color 160ms ease-out, transform 160ms ease-out; }
+.switch button:active, .demo-steps button:active { transform:scale(.97); }
+
+/* Session to Skill: the demo opens at the top of its window. */
+.demo-window { min-height:340px; }
+.demo-main { align-content:start; }
+
+/* Prototype meter: blue while the count is provisional, ink once the charge is final. */
+.meter-figure { color:var(--meter-hi); transition:color 300ms ease-out; }
+.meter-figure[data-final="true"] { color:var(--ink); }
+.meter-fill { background:var(--meter); transition:background-color 300ms ease-out; }
+.meter-fill[data-final="true"] { background:var(--ink); }
+.stamp.settle.settle-in { animation:settle-in 220ms cubic-bezier(.23,1,.32,1) both; }
+@media (prefers-reduced-motion: reduce) { .stamp.settle.settle-in { animation:none; } }
+
+/* Phone header on one row: brand left, dashboard link and an icon-only theme switch right. */
+@media (max-width:700px) {
+  .masthead > div > div { gap:8px; }
+  .masthead > div > div > a { font-size:17px; white-space:nowrap; }
+  .masthead-links { flex-wrap:nowrap; gap:8px; }
+  .masthead-links a.dash { white-space:nowrap; }
+  .theme-toggle { font-size:0; gap:0; padding:0; min-width:40px; min-height:40px; justify-content:center; }
+  /* Hero receipt rows keep the figure on the label's line; a long label wraps instead. */
+  .sum-receipt .tape .leader { flex-wrap:nowrap; }
+  .sum-receipt .tape .leader > :first-child { white-space:normal; }
+  .sum-receipt .tape .leader > :last-child { white-space:nowrap; }
+}
+
+/* Home: the explainer video, between the hero and the three problems. */
+.sum > .sum-film { margin-top:72px; }
+.sum-film figure { max-width:960px; }
+.sum-film video { display:block; width:100%; aspect-ratio:16 / 9; background:#0e0f12; border:1px solid var(--rule); border-radius:12px; box-shadow:var(--shadow); }
+.sum-film figcaption { margin-top:12px; font-size:.8125rem; line-height:1.5; color:var(--ink2); max-width:60em; }
+.sum-film + .tri-rule { margin-top:72px; }
+@media (max-width:900px) { .sum > .sum-film { margin-top:48px; } .sum-film + .tri-rule { margin-top:48px; } }
+
+/* Header, fourth pass: a larger name, the dashboard link beside it, then the byline, then the links. */
+.masthead > div > div.mh-id { display:block; width:100%; padding-bottom:10px; }
+.mh-top { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 18px; }
+.mh-brand { font-family:var(--font-serif), Georgia, serif; font-size:2rem; line-height:1.1; letter-spacing:-.01em; color:var(--brand); text-decoration:none; }
+.masthead .mh-tag { margin-top:6px; font-size:.9375rem; line-height:1.4; color:var(--ink2); }
+.masthead .mh-tag strong { color:var(--ink); }
+.masthead .mh-social { margin-top:6px; gap:6px 18px; }
+@media (max-width:700px) {
+  .masthead > div > div.mh-id { display:block; padding-bottom:4px; }
+  .mh-brand { font-size:1.375rem; white-space:nowrap; }
+  .masthead .mh-tag { display:block; font-size:.8125rem; }
+  .masthead .mh-social { display:none; }
+  .mh-tools a.dash, .mh-tools .soon { font-size:.75rem; white-space:nowrap; }
+}
+
+/* Metrics with numbers: what my runs show, and a starting bar, lead each cell with a figure. */
+.sum-metrics td { min-width:11rem; }
+.sum-metrics td:nth-of-type(1), .sum-metrics td:nth-of-type(4) { min-width:15rem; }
+.sum-num { display:block; font-size:1.375rem; line-height:1.15; letter-spacing:-.02em; font-variant-numeric:tabular-nums; color:var(--tone-hi, var(--ink)); margin-bottom:4px; white-space:nowrap; }
+.sum-num.quiet { font-size:1rem; letter-spacing:0; color:var(--ink2); white-space:normal; }
+.sum-metrics .cost, .sum-metrics .meter, .sum-metrics .hybrid { --tone:var(--accent); }
+.sum-metrics .cost { --tone-hi:var(--cost-hi); } .sum-metrics .meter { --tone-hi:var(--meter-hi); } .sum-metrics .hybrid { --tone-hi:var(--hybrid-hi); }
+@media (max-width:700px) { .sum-metrics td, .sum-metrics td:nth-of-type(1), .sum-metrics td:nth-of-type(4) { min-width:0; } }
+
+/* What it could be worth: three small sums, three levers, one break-even line. */
+.sum-worth .sum-counts { max-width:56rem; }
+.sum-worth .sum-counts .meter { --tone:var(--meter); --tone-hi:var(--meter-hi); }
+.sum-levers { margin:26px 0 22px; }
+.sum-worth .sum-finding.quiet b { color:var(--ink); }

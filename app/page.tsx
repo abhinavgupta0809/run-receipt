@@ -1,10 +1,11 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import Link from "next/link";
-import { PROTOCOL, medianLowPct, panelReadings, tally, widestRepeatRuns } from "@/lib/study.ts";
+import { PROPOSED, PROTOCOL, medianGapCredits, medianLowPct, panelReadings, rangeBacktest, tally, widestRepeatRuns } from "@/lib/study.ts";
 import { Dots } from "./charts";
+import HeroMoments from "./hero-moments";
 import { load } from "./data";
-import { credits, duration, runs as runCount, span } from "./format";
+import { credits, duration, money, runs as runCount, span } from "./format";
 
 type Cluster = { title: string; reviews: number; lowStar: number; android: number; ios: number };
 type Research = {
@@ -25,7 +26,8 @@ const countWord = (x: number) => WORDS[x] ?? String(x);
 // "12.14, 14.29 and 21.96"
 const listOf = (values: number[]) => { const parts = values.map(credits); return parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}` : parts.join(""); };
 
-// Order: the problem with a number, the three problems, users saying the same, the fix, how to measure it, then method and limits.
+// Order: the problem with a number, the three problems, users saying the same, the fix, how to measure it, then limits.
+// How I got to the problem sits behind a fold on /evidence.
 // The two-minute read. Every table and screenshot behind it lives on /evidence.
 // Built at build time from data/ through lib/. No figure on this page is typed by hand.
 export default function Summary() {
@@ -39,6 +41,10 @@ export default function Summary() {
   const totals = `${lane.totalsRight} of ${lane.rows.length}`;
   const range = span(h.widestRepeat.credits, credits);
   const research = JSON.parse(readFileSync(path.join(process.cwd(), "data", "research.json"), "utf8")) as Research;
+  const business = JSON.parse(readFileSync(path.join(process.cwd(), "data", "business.json"), "utf8")) as { checked: string; source: string; plans: { name: string; usdPerMonth: number }[]; costUnitUsd: number };
+  const raw = rangeBacktest(runs);
+  const padded = rangeBacktest(runs, PROPOSED.padPct);
+  const rate = PROTOCOL.usdPerCredit;
   const repeatFinals = repeat.runs.map((r) => r.final).sort((x, y) => x - y);
   const repeatSpread = Math.round((repeatFinals[repeatFinals.length - 1] / repeatFinals[0] - 1) * 100);
 
@@ -48,7 +54,7 @@ export default function Summary() {
         <div>
           <h1 className="long">Same prompt, {countWord(repeat.runs.length)} runs: {listOf(repeatFinals)} credits.</h1>
           <p className="sum-lede">
-            I ran one Perplexity Computer prompt {countWord(repeat.runs.length)} times on the same setting. The most expensive run cost {repeatSpread}% more than the cheapest. You can&apos;t budget for that, and {n(research.creditsRunOut.reviews)} store reviews are from paying users who ran out of credits.
+            The most expensive run cost {repeatSpread}% more than the cheapest, on the same setting. You can&apos;t budget for that, and {n(research.creditsRunOut.reviews)} store reviews are from paying users who ran out of credits.
           </p>
           <p className="sum-lede sum-why">
             <b>Run Receipt</b> is my fix: a cost range before you send, a provisional count while it runs, and numbers checked by code after.
@@ -65,34 +71,30 @@ export default function Summary() {
           <figcaption>The fix: one run, as its receipt</figcaption>
           <div className="tape">
             <p className="small">Bank report, private steps on your Mac. Recorded run {lane.run.id}.</p>
-            <div className="sum-moment cost line-in" style={{ animationDelay: "0.2s" }}>
+            <div className="sum-moment cost line-in" style={{ animationDelay: "0.1s" }}>
               <p className="tape-head">Before you send</p>
               {lane.estimate && <Row label="Credits" value={span(lane.estimate.credits, credits)} />}
               {lane.estimate?.seconds && <Row label="Time" value={span(lane.estimate.seconds, duration)} />}
             </div>
-            <div className="sum-moment meter line-in" style={{ animationDelay: "0.9s" }}>
-              <p className="tape-head">While it runs</p>
-              <div className="leader">
-                <span>Credits so far</span>
-                <span className="dots" />
-                <span className="fig">{credits(lane.run.panelAtFinish)} <span className="chip mark-prov">PROVISIONAL</span></span>
-              </div>
-            </div>
-            <div className="sum-moment hybrid line-in" style={{ animationDelay: "1.6s" }}>
-              <p className="tape-head">After</p>
-              <div className="leader">
-                <span>Totals that match the file</span>
-                <span className="dots" />
-                <span className="fig">{totals} <span className="stamp text-fail">CAUGHT</span></span>
-              </div>
-              <Row label="Left out of the report" value={lane.withheld.map((w) => w.category).join(", ")} />
-            </div>
-            <div className="leader sum-total line-in" style={{ animationDelay: "2.3s" }}>
+            <HeroMoments panel={lane.run.panelAtFinish} final={lane.run.final} totals={totals} withheld={lane.withheld.map((w) => w.category).join(", ")} />
+            <div className="leader sum-total line-in" style={{ animationDelay: "0.85s" }}>
               <span>TOTAL</span>
               <span className="dots" />
               <span className="fig">{credits(lane.run.final)} credits</span>
             </div>
           </div>
+        </figure>
+      </section>
+
+      <section aria-labelledby="film" className="sum-film">
+        <h2 id="film" className="sum-h2">The study in under half a minute</h2>
+        <figure>
+          <video controls playsInline preload="metadata" poster="/video/run-receipt-explainer.jpg" aria-describedby="film-note">
+            <source src="/video/run-receipt-explainer.mp4" type="video/mp4" />
+          </video>
+          <figcaption id="film-note">
+            The problem, the three findings and the receipt, in that order. No speech, so it reads with the sound off. Its numbers were rendered from this site&apos;s data and do not update by themselves.
+          </figcaption>
         </figure>
       </section>
 
@@ -127,14 +129,11 @@ export default function Summary() {
         <h2 id="research" className="sum-h2">Users say it too</h2>
         <div className="sum-research">
           <div>
-            <ul className="sum-counts" aria-label="Reviews read">
-              <li><b>{n(research.corpus.reviews)}</b><span>{research.corpus.stores} reviews, {research.corpus.from} to {research.corpus.to}</span></li>
-              <li><b>{n(research.corpus.substantive)}</b><span>of them say something specific</span></li>
-              <li className="cost"><b>{n(research.money.reviews)}</b><span>complaints and requests about credits, limits, pricing or billing</span></li>
+            <ul className="sum-counts" aria-label="What the reviews say about credits">
+              <li className="cost"><b>{n(research.creditsRunOut.reviews)}</b><span>reviews are from paying users who ran out of credits</span></li>
+              <li className="cost"><b>{n(research.creditsRunOut.lowStar)}</b><span>of those came with 1 or 2 stars</span></li>
+              <li className="cost"><b>{n(research.computerCredits.reviews)}</b><span>reviews say Computer burned through their credits</span></li>
             </ul>
-            <p className="sum-finding">
-              <b>{research.creditsRunOut.reviews}</b> reviews are from paying users who ran out of credits, and {research.creditsRunOut.lowStar} of those came with 1 or 2 stars. <b>{research.computerCredits.reviews}</b> say Computer burned through their credits.
-            </p>
             <p className="sum-finding quiet">
               This is not the largest complaint. {research.larger.map((c) => `${c.title} (${c.reviews})`).join(" and ")} are bigger. Run Receipt is aimed at paying Computer users.
             </p>
@@ -147,14 +146,14 @@ export default function Summary() {
               ))}
             </div>
             <p className="sum-source">
-              Public reviews, not interviews. Labels come from an LLM, checked against {research.labelCheck.n} hand-labelled reviews: {research.labelCheck.matches} matched. A keyword search of these reviews found none about the credit meter reading low. That finding comes from my own runs.
+              From {n(research.corpus.reviews)} {research.corpus.stores} reviews, {research.corpus.from} to {research.corpus.to}. {n(research.corpus.substantive)} say something specific. {n(research.money.reviews)} are complaints and requests about credits, limits, pricing or billing. Public reviews, not interviews. Labels come from an LLM, checked against {research.labelCheck.n} hand-labelled reviews: {research.labelCheck.matches} matched. A keyword search of these reviews found none about the credit meter reading low. That finding comes from my own runs.
             </p>
           </div>
-          <aside className="sum-slot" aria-label="Reviews dashboard">
+          <aside className={`sum-slot ${research.dashboardUrl ? "live" : ""}`} aria-label="Reviews dashboard">
             <p className="sum-slot-tag">{research.dashboardUrl ? "Live" : "Built, not yet published"}</p>
             <h3>Reviews dashboard</h3>
             <p>All {n(research.corpus.reviews)} reviews, labelled, in four views: overview, deep dive, opportunities and every review.</p>
-            {research.dashboardUrl ? <p className="sum-actions"><a className="btn btn-quiet" href={research.dashboardUrl}>Open the dashboard</a></p> : <p className="sum-slot-note">The link goes here when it is live.</p>}
+            {research.dashboardUrl ? <p className="sum-actions"><a className="btn" href={research.dashboardUrl}>Open the dashboard</a></p> : <p className="sum-slot-note">The link goes here when it is live.</p>}
           </aside>
         </div>
       </section>
@@ -163,7 +162,7 @@ export default function Summary() {
         <h2 id="fix" className="sum-h2">The fix: one receipt, shown at three moments</h2>
         <ol className="sum-fix">
           <Fix tone="cost" when="Before you send" answers="Problem 1" what="The plan, where each step will run, and a credit range taken from past runs."
-            proof={lane.estimate ? `${span(lane.estimate.credits, credits)} credits` : ""} proofNote={lane.estimate ? `range from ${runCount(lane.estimate.credits.n)}` : ""} />
+            proof={`${range} credits`} proofNote={`range from ${runCount(h.widestRepeat.credits.n)} of one prompt`} />
           <Fix tone="meter" when="While it runs" answers="Problem 2" what="The credit count, marked provisional until the charge settles."
             proof={`${credits(lane.run.panelAtFinish)} → ${credits(lane.run.final)}`} proofNote="panel at Finished, then the final charge" />
           <Fix tone="hybrid" when="After" answers="Problem 3" what="Checks done by code, what was withheld from the result, and a way to repair it."
@@ -176,47 +175,85 @@ export default function Summary() {
 
       <section aria-labelledby="measure">
         <h2 id="measure" className="sum-h2">Proposed success metrics</h2>
-        <p className="sum-note">What I would measure if Perplexity shipped the receipt. I have no access to Perplexity&apos;s data, so I would set each bar after a baseline week.</p>
+        <p className="sum-note">What I would measure if Perplexity shipped the receipt. The middle column is what my own {h.runs} runs show today. The bars are my starting proposals: I have no access to Perplexity&apos;s data, so each would be reset after a baseline week.</p>
         <div className="scroll-x" tabIndex={0} role="region" aria-label="Proposed metrics">
           <table className="data sum-metrics">
             <thead>
-              <tr><th>Metric</th><th>How it is counted</th><th>The decision it controls</th></tr>
+              <tr><th>Metric</th><th>How it is counted</th><th>In my runs</th><th>Starting bar</th><th>The decision it controls</th></tr>
             </thead>
             <tbody>
               <tr className="cost">
                 <th scope="row"><i />Estimate hit rate</th>
                 <td>Runs whose final charge landed inside the range shown before sending, divided by runs that showed a range. Weekly, tasks with past runs.</td>
-                <td>If it is low, the range cannot be trusted yet. Widen it or hold the rollout.</td>
+                <td><b className="sum-num">{raw.hits} of {raw.n}</b>A range built from the other runs of the same prompt held the next run. Widened by {PROPOSED.padPct}% at each end: <b>{padded.hits} of {padded.n}</b>.</td>
+                <td><b className="sum-num">{PROPOSED.hitRatePct}%</b>of runs inside the range.</td>
+                <td>Below the bar, the range cannot be trusted yet. Widen it or hold the rollout.</td>
+              </tr>
+              <tr className="cost">
+                <th scope="row"><i />Range width</th>
+                <td>High end minus low end, divided by the low end. Median across tasks, weekly. It keeps the hit rate honest: a very wide range always hits.</td>
+                <td><b className="sum-num">{padded.medianWidthPct}%</b>Median with the {PROPOSED.padPct}% widening. Without it, {raw.medianWidthPct}%. The widest single prompt was {Math.round(h.widestRepeat.spreadPct)}%.</td>
+                <td><b className="sum-num">under {PROPOSED.widthPct}%</b>median width.</td>
+                <td>Above the bar, the range is too wide to budget with. Collect more past runs before showing it.</td>
               </tr>
               <tr className="meter">
                 <th scope="row"><i />Meter gap at Finished</th>
-                <td>Final charge minus the credits shown at Finished, divided by the final charge. Median per run, weekly. In my {h.panelReadings} readings it was {Math.round(medianLowPct(readings))}%.</td>
-                <td>The provisional mark stays until this is close to zero.</td>
+                <td>Final charge minus the credits shown at Finished, divided by the final charge. Median per run, weekly.</td>
+                <td><b className="sum-num">{Math.round(medianLowPct(readings))}%</b>Median of {h.panelReadings} readings. {h.panelLow} of them read low.</td>
+                <td><b className="sum-num">under {PROPOSED.meterGapPct}%</b>median gap.</td>
+                <td>The provisional mark stays until the gap is under the bar.</td>
               </tr>
               <tr className="hybrid">
                 <th scope="row"><i />Repair take-up</th>
                 <td>Runs where the user took the offered repair, divided by runs where a check failed. Weekly, file tasks.</td>
+                <td><b className="sum-num quiet">No baseline</b>Only I have used the prototype. In my runs the local model ran {t.localRuns} times and {t.localRunsNotFullMarks} came back wrong or incomplete.</td>
+                <td><b className="sum-num quiet">Set after a baseline week</b></td>
                 <td>If few take it, the repair is priced or placed wrong.</td>
               </tr>
               <tr>
                 <th scope="row"><i />Guardrail: runs sent</th>
                 <td>Runs sent, divided by prompts where a cost range was shown. Weekly, against the week before.</td>
-                <td>If showing the cost stops runs people would have valued, change how the range is shown.</td>
+                <td><b className="sum-num quiet">No baseline</b>The prototype replays recorded runs, so nobody chose whether to send.</td>
+                <td><b className="sum-num">{PROPOSED.runsSentDropPct}%</b>lower at most.</td>
+                <td>A bigger drop means the range is stopping runs people would have valued. Change how it is shown.</td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <section aria-labelledby="path">
-        <h2 id="path" className="sum-h2">How I worked</h2>
-        <ol className="sum-path">
-          <li><span>1</span><h3>Read what users say</h3><p>{n(research.firstRead.reviews)} recent App Store reviews, Reddit threads and press coverage. Later, {n(research.corpus.reviews)} store reviews in a dashboard.</p></li>
-          <li><span>2</span><h3>Framed the problems</h3><p>{research.firstRead.problemStatements} problem statements. The largest group was about credits. I ruled out exporters, browser clones and UI redesigns.</p></li>
-          <li><span>3</span><h3>Used the product</h3><p>I walked through Computer, Hybrid and Skills on my own account.</p></li>
-          <li><span>4</span><h3>Measured it</h3><p>{h.runs} runs with made-up files and answer keys, {PROTOCOL.period}.</p></li>
-          <li><span>5</span><h3>Built the fix</h3><p>Run Receipt first, then Session to Skill.</p></li>
+      <section aria-labelledby="worth" className="sum-worth">
+        <h2 id="worth" className="sum-h2">What it could be worth</h2>
+        <p className="sum-note">Per run, the money is small. At {money(rate)} a credit:</p>
+        <ul className="sum-counts" aria-label="Money at stake in one run">
+          <li className="cost"><b>{money((h.widestRepeat.credits.max - h.widestRepeat.credits.min) * rate)}</b><span>between the cheapest and the most expensive run of one prompt ({range} credits)</span></li>
+          <li className="meter"><b>{money(medianGapCredits(readings) * rate)}</b><span>median amount the meter read low at Finished ({credits(medianGapCredits(readings))} credits)</span></li>
+          {h.effort && <li className="cost"><b>{money(h.effort.high * rate)}</b><span>for one prompt on High effort, against {money(h.effort.standard * rate)} on Standard</span></li>}
+        </ul>
+        <p className="sum-finding">So the case is not cents saved per run. It is whether paying users who cannot predict their credits stay subscribed.</p>
+        <ol className="sum-fix sum-levers">
+          <li className="sum-fix-step cost">
+            <p className="sum-answers">Lever 1</p>
+            <h3>Fewer cancellations</h3>
+            <p>Paying users who run out of credits without warning. Perplexity would plug in: paying Computer users, the share who hit a credit surprise, and how many of those cancel.</p>
+          </li>
+          <li className="sum-fix-step meter">
+            <p className="sum-answers">Lever 2</p>
+            <h3>Fewer billing contacts</h3>
+            <p>Refund and credit disputes that start with a charge higher than the screen showed. Perplexity would plug in: contacts tagged credits or billing, and the cost of one.</p>
+          </li>
+          <li className="sum-fix-step hybrid">
+            <p className="sum-answers">Lever 3</p>
+            <h3>More top-ups, or fewer</h3>
+            <p>A user who can budget may buy more credits. A user who sees the price may send fewer runs. The guardrail metric above is there to tell which.</p>
+          </li>
         </ol>
+        <p className="sum-finding quiet">
+          <b>Break-even.</b> One retained subscriber-month is worth {business.plans.map((p) => `${money(p.usdPerMonth).replace(/\.00$/, "")} on ${p.name}`).join(" and ")}. Every {money(business.costUnitUsd).replace(/\.00$/, "")} of build and running cost is paid back by {business.plans.map((p) => `${n(business.costUnitUsd / p.usdPerMonth)} retained ${p.name} months`).join(" or ")}.
+        </p>
+        <p className="sum-source">
+          I cannot size this. Subscriber counts, churn and credit revenue are inside Perplexity, and I will not guess them. The public signal is a count, not a rate: {n(research.creditsRunOut.reviews)} store reviews in the window above are from paying users who ran out of credits, {n(research.creditsRunOut.lowStar)} of them at 1 or 2 stars. Plan prices are list prices from {business.source}, checked {business.checked}.
+        </p>
       </section>
 
       <section aria-labelledby="limits" className="sum-limits">

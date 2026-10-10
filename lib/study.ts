@@ -186,3 +186,38 @@ export function medianLowPct(readings: PanelReading[]): number {
   const mid = Math.floor(xs.length / 2);
   return round2(xs.length % 2 ? xs[mid] : (xs[mid - 1] + xs[mid]) / 2);
 }
+
+// Starting bars for the proposed metrics. These are proposals, not measurements: Perplexity would reset
+// each one after a baseline week. padPct is how far the shown range is widened at each end.
+export const PROPOSED = { hitRatePct: 80, padPct: 20, widthPct: 50, meterGapPct: 2, runsSentDropPct: 5 };
+
+const median = (values: number[]) => {
+  const xs = [...values].sort((a, b) => a - b);
+  if (xs.length === 0) return 0;
+  const mid = Math.floor(xs.length / 2);
+  return xs.length % 2 ? xs[mid] : (xs[mid - 1] + xs[mid]) / 2;
+};
+
+// Would the receipt's range have held? For every prompt and setting run more than once, take each run out
+// in turn, build the range from the runs that are left, widen it by padPct at each end, and see whether the
+// run that was taken out lands inside. Also the median width of the widened ranges, as a share of the low end.
+export function rangeBacktest(runs: Run[], padPct = 0): { hits: number; n: number; medianWidthPct: number } {
+  const pad = padPct / 100;
+  let hits = 0, n = 0;
+  const widths: number[] = [];
+  for (const g of groupRuns(runs).filter((x) => x.credits.n > 1)) {
+    const finals = g.runIds.map((id) => runs.find((r) => r.id === id)!.final);
+    widths.push(((g.credits.max * (1 + pad) - g.credits.min * (1 - pad)) / g.credits.min) * 100);
+    finals.forEach((held, i) => {
+      const rest = finals.filter((_, j) => j !== i);
+      n += 1;
+      if (held >= Math.min(...rest) * (1 - pad) && held <= Math.max(...rest) * (1 + pad)) hits += 1;
+    });
+  }
+  return { hits, n, medianWidthPct: Math.round(median(widths)) };
+}
+
+// Median of the final charge minus the panel reading at "Finished", in credits.
+export function medianGapCredits(readings: PanelReading[]): number {
+  return round2(median(readings.map((r) => r.final - r.panel)));
+}

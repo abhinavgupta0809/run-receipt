@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import type { Range } from "@/lib/estimate.ts";
 import type { Lane, ReplayData, TotalRow } from "@/lib/replay.ts";
 import type { PanelRun, SheetLane } from "@/lib/sheet.ts";
 import type { Check } from "@/lib/verify.ts";
@@ -12,8 +13,8 @@ type Task = "report" | "budget";
 type Stage = "plan" | "running" | "finished" | "final";
 type Route = "Search" | "Your Mac" | "Cloud";
 
-const REPLAY_MS = 6000;
-const SETTLE_MS = 2200;
+const REPLAY_MS = 3500;
+const SETTLE_MS = 1200;
 const COUNT_MS = 900;
 
 type Step = { name: string; route: Record<Mode, Route>; reason: Record<Mode, string>; check?: string };
@@ -63,19 +64,24 @@ const STEPS: Record<Task, Step[]> = {
 const ROUTE_CHIP: Record<Route, string> = { Search: "chip chip-search", "Your Mac": "chip chip-mac", Cloud: "chip chip-cloud" };
 
 const PROBLEMS = {
-  cost: { n: "1", title: "Cost is a surprise.", answer: "Before you send, the receipt gives a credit range and a time range taken from past runs of the same task." },
+  cost: { n: "1", title: "Cost is a surprise.", answer: "Before you send, the receipt gives a credit range and a time range taken from past runs of the same prompt." },
   meter: { n: "2", title: "The credit meter reads low while you watch it.", answer: "While it runs, the count is marked provisional until the final charge lands." },
   hybrid: { n: "3", title: "Hybrid mode is unpredictable.", answer: "After, the receipt says where each step ran, checks the numbers with code and offers a repair." },
 } as const;
 
-export default function Replay({ data }: { data: ReplayData }) {
+export type WideExample = { label: string; setting: string; prompt: string | null; credits: Range; seconds: Range | null };
+
+export default function Replay({ data, wide }: { data: ReplayData; wide: WideExample }) {
   const [task, setTask] = useState<Task>("report");
   const [mode, setMode] = useState<Mode>("hybrid");
   const [stage, setStage] = useState<Stage>("plan");
   const [progress, setProgress] = useState(0);
   const [showWithheld, setShowWithheld] = useState(false);
   const [rerun, setRerun] = useState(false);
+  // The After view holds its verdict back until a run has settled once, so the catch is seen to happen.
+  const [revealed, setRevealed] = useState(false);
   const meterRef = useRef<HTMLElement>(null);
+  const afterRef = useRef<HTMLElement>(null);
   const autoPlayed = useRef(false);
   const lane = task === "report" ? data[mode] : data.budget[mode];
   const steps = STEPS[task];
@@ -83,16 +89,21 @@ export default function Replay({ data }: { data: ReplayData }) {
   useEffect(() => {
     if (stage === "running") {
       const start = performance.now();
-      const id = setInterval(() => {
-        const p = Math.min(1, (performance.now() - start) / REPLAY_MS);
+      let id = requestAnimationFrame(function tick(now) {
+        const p = Math.min(1, Math.max(0, now - start) / REPLAY_MS);
         setProgress(p);
         if (p === 1) setStage("finished");
-      }, 50);
-      return () => clearInterval(id);
+        else id = requestAnimationFrame(tick);
+      });
+      return () => cancelAnimationFrame(id);
     }
     if (stage === "finished") {
       const id = setTimeout(() => setStage("final"), SETTLE_MS);
       return () => clearTimeout(id);
+    }
+    if (stage === "final") {
+      const id = requestAnimationFrame(() => setRevealed(true));
+      return () => cancelAnimationFrame(id);
     }
   }, [stage]);
 
@@ -103,7 +114,8 @@ export default function Replay({ data }: { data: ReplayData }) {
     setStage(still ? "final" : "running");
   };
 
-  // The meter is the thing to remember, so it plays once by itself when it scrolls into view.
+  // The meter is the thing to remember, so it plays once by itself when it scrolls into view. If a reader
+  // lands on the After view first, that starts it too, so the verdict is never left waiting.
   useEffect(() => {
     const el = meterRef.current;
     if (!el || autoPlayed.current) return;
@@ -114,9 +126,10 @@ export default function Replay({ data }: { data: ReplayData }) {
           start();
         }
       },
-      { threshold: 0.6 },
+      { threshold: 0.35 },
     );
     seen.observe(el);
+    if (afterRef.current) seen.observe(afterRef.current);
     return () => seen.disconnect();
   }, []);
 
@@ -149,12 +162,20 @@ export default function Replay({ data }: { data: ReplayData }) {
         <ProblemSide id="pv-cost" {...PROBLEMS.cost} />
         <div className="tape">
           <Head>Before you send</Head>
+          <p className="pv-prompt">&ldquo;{wide.prompt ?? wide.label}&rdquo;</p>
+          <dl className="mt-4 space-y-2">
+            <Item label="This run will cost" value={`${span(wide.credits, credits)} credits`} note={`from ${wide.credits.n} measured runs of this prompt, ${wide.setting}`} strong />
+            {wide.seconds && <Item label="It will take" value={span(wide.seconds, duration)} note="timed on the same runs" />}
+          </dl>
+          <p className="pv-fact">This is the widest range I measured for one prompt on one setting. Without the receipt, nothing on screen says which end you will get.</p>
+          <hr className="tear" />
+          <Head>The run replayed below</Head>
           <p className="pv-prompt">&ldquo;{TASKS[task].prompt}&rdquo;</p>
           {lane.estimate ? (
-            <dl className="mt-4 space-y-2">
-              <Item label="This run will cost" value={`${span(lane.estimate.credits, credits)} credits`} note={`from ${lane.estimate.credits.n} measured ${lane.estimate.credits.n === 1 ? "run" : "runs"} of this task`} strong />
-              <Item label="It will take" value={lane.estimate.seconds ? span(lane.estimate.seconds, duration) : "not timed"} note="from the app or screenshot timestamps" />
-            </dl>
+            <p className="pv-fact">
+              Its range is narrow because the past runs landed close together: <b className="fig">{span(lane.estimate.credits, credits)} credits</b>
+              {lane.estimate.seconds ? <>, <b className="fig">{span(lane.estimate.seconds, duration)}</b></> : null}, from {lane.estimate.credits.n} measured {lane.estimate.credits.n === 1 ? "run" : "runs"} of this task.
+            </p>
           ) : (
             <p className="small mt-3">No past runs of this task, so no range yet.</p>
           )}
@@ -203,7 +224,7 @@ export default function Replay({ data }: { data: ReplayData }) {
         </div>
       </section>
 
-      <section className="pv hybrid" aria-labelledby="pv-hybrid">
+      <section className="pv hybrid" aria-labelledby="pv-hybrid" ref={afterRef} data-pending={revealed ? "false" : "true"}>
         <ProblemSide id="pv-hybrid" {...PROBLEMS.hybrid} answer={mode === "hybrid" ? PROBLEMS.hybrid.answer : "This is the comparison run: the same task done fully in the cloud, with nothing on the Mac. The receipt runs the same checks."} />
         <div className="tape">
           <Head>After</Head>
@@ -334,16 +355,13 @@ function Meter({ lane, steps, stage, progress }: { lane: { mode: Mode; run: Pane
     <div className="mt-3">
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
         <p className="leading-none">
-          <span
-            className="fig text-[clamp(3.5rem,17vw,6rem)] leading-[0.95] font-bold tracking-[-0.04em] transition-[background-size] duration-500"
-            
-          >
+          <span className="meter-figure text-[clamp(3.5rem,17vw,6rem)] leading-[0.95] font-bold tracking-[-0.04em] tabular-nums" data-final={final}>
             {credits(shown)}
           </span>
           <span className="ml-2 text-base text-ink2">credits</span>
         </p>
         {final ? (
-          <span key="final" className="stamp settle mb-2 text-sm! text-ink">
+          <span key="final" className="stamp settle settle-in mb-2 text-sm! text-ink">
             FINAL
           </span>
         ) : (
@@ -354,7 +372,7 @@ function Meter({ lane, steps, stage, progress }: { lane: { mode: Mode; run: Pane
       </div>
 
       <div className="relative mt-4 h-2 bg-grid" role="progressbar" aria-label="Replay progress" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>
-        <div className="h-full bg-ink" style={{ width: `${progress * 100}%` }} />
+        <div className="meter-fill h-full w-full origin-left" data-final={final} style={{ transform: `scaleX(${progress})` }} />
         {steps.slice(1).map((s, i) => (
           <span key={s.name} aria-hidden className="absolute inset-y-0 w-[2px] bg-sheet" style={{ left: `${((i + 1) / steps.length) * 100}%` }} />
         ))}

@@ -90,6 +90,6 @@ export function PanelSlope({ readings }: { readings: PanelReading[] }) {
 export function Dots({ total, on, tone, label, perRow = 10 }: { total: number; on: number; tone: "cost" | "meter" | "hybrid"; label: string; perRow?: number }) {
   const step = 26, r = 9, rows = Math.ceil(total / perRow), w = Math.min(total, perRow) * step, h = rows * step;
   return <svg data-chart className="dots-chart" width={w} height={h} viewBox={`0 0 ${w} ${h}`} role="img" aria-label={label}>
-    {Array.from({ length: total }, (_, i) => <circle key={i} cx={(i % perRow) * step + step / 2} cy={Math.floor(i / perRow) * step + step / 2} r={r} fill={i < on ? `var(--${tone})` : "none"} stroke={i < on ? "none" : "var(--rest)"} strokeWidth="2" className="m-pop" style={{ animationDelay: `${i * 45}ms` }} />)}
+    {Array.from({ length: total }, (_, i) => <circle key={i} cx={(i % perRow) * step + step / 2} cy={Math.floor(i / perRow) * step + step / 2} r={r} fill={i < on ? `var(--${tone})` : "none"} stroke={i < on ? "none" : "var(--ink2)"} strokeWidth="2" className="m-pop" style={{ animationDelay: `${i * 20}ms` }} />)}
   </svg>;
 }

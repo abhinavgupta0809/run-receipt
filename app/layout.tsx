@@ -18,7 +18,8 @@ const EMAIL = "agupta7@tepper.cmu.edu";
 const LINKEDIN = "https://www.linkedin.com/in/abhinavgupta0809";
 const GITHUB = "https://github.com/abhinavgupta0809";
 // Applied before first paint so a saved light theme does not flash dark.
-const THEME_SCRIPT = `try{var t=localStorage.getItem("run-receipt-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
+// Also marks that scripts run, so motion that waits for a script never hides anything without one.
+const THEME_SCRIPT = `document.documentElement.dataset.js="1";try{var t=localStorage.getItem("run-receipt-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
 
 export const metadata: Metadata = {
   title: { default: "Run Receipt: a case study of Perplexity Computer", template: "%s | Run Receipt" },
@@ -36,18 +37,20 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col">
         <header className="masthead">
           <div className="mx-auto flex w-full max-w-6xl flex-wrap items-end justify-between gap-x-6 gap-y-3 px-4 pt-4 sm:px-8">
-            <div className="pb-3">
-              <Link href="/" className="font-mono text-[1.0625rem] font-bold tracking-tight text-ink no-underline">
-                Run Receipt
-              </Link>
-              <div className="masthead-links">
-                <span>An outside study of Perplexity Computer by <strong>Abhinav Gupta</strong></span>
+            <div className="mh-id">
+              <div className="mh-top">
+                <Link href="/" className="mh-brand">Run Receipt</Link>
+                <div className="masthead-links mh-tools">
+                  {dashboardUrl ? <a className="dash" href={dashboardUrl} target="_blank" rel="noopener">Perplexity reviews dashboard</a> : <span className="soon" title="The link goes here when the dashboard is published">Perplexity reviews dashboard: link coming</span>}
+                  <ThemeToggle />
+                </div>
+              </div>
+              <p className="mh-tag">An outside study of Perplexity Computer by <strong>Abhinav Gupta</strong></p>
+              <p className="masthead-links mh-social">
                 <a href={LINKEDIN} target="_blank" rel="noopener">LinkedIn</a>
                 <a href={GITHUB} target="_blank" rel="noopener">GitHub</a>
                 <a href={`mailto:${EMAIL}`}>Email</a>
-                {dashboardUrl ? <a className="dash" href={dashboardUrl} target="_blank" rel="noopener">Reviews dashboard</a> : <span className="soon" title="The link goes here when the dashboard is published">Reviews dashboard: link coming</span>}
-                <ThemeToggle />
-              </div>
+              </p>
             </div>
             <Tabs />
           </div>
@@ -61,6 +64,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </p>
             <p className="mt-2">
               Abhinav Gupta, MS Product Management, Carnegie Mellon. <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
+              <span className="foot-links"><a href={LINKEDIN} target="_blank" rel="noopener">LinkedIn</a><a href={GITHUB} target="_blank" rel="noopener">GitHub</a></span>
             </p>
           </div>
         </footer>

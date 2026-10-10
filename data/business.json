@@ -1,0 +1,10 @@
+{
+  "note": "List prices used only for the break-even line on the home page. Volatile: re-check before publishing.",
+  "checked": "Oct 9, 2026",
+  "source": "third-party pricing guides, not Perplexity's own plans page",
+  "plans": [
+    { "name": "Pro", "usdPerMonth": 20 },
+    { "name": "Max", "usdPerMonth": 200 }
+  ],
+  "costUnitUsd": 10000
+}

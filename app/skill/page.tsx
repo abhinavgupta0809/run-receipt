@@ -76,18 +76,8 @@ export default function SkillPage() {
         <p className="sum-note sk-after">My read of the gap. I have not interviewed Perplexity users about Skills.</p>
       </section>
 
-      <section aria-labelledby="solution" className="sum-band sk-band">
-        <h2 id="solution" className="sum-h2">The solution: the skill comes out of the work</h2>
-        <ol className="sk-flow">
-          <li><span>1</span><h3>Repeat a task</h3><p>Do it two or three times, the way you already do.</p></li>
-          <li><span>2</span><h3>Get asked</h3><p>&ldquo;You have done this {sessions.length} times. Turn it into a skill?&rdquo;</p></li>
-          <li><span>3</span><h3>Say yes</h3><p>The skill is written for you in Markdown, so anyone can read it.</p></li>
-          <li><span>4</span><h3>Call it</h3><p>Next time, type <code className="fig">{command}</code>.</p></li>
-        </ol>
-      </section>
-
       <section aria-labelledby="demo">
-        <h2 id="demo" className="sum-h2">Watch it happen</h2>
+        <h2 id="demo" className="sum-h2">The solution: the skill comes out of the work</h2>
         <Demo
           prompt={s.prompt}
           runs={sessions.map((x) => ({ runId: x.runId, when: x.when, credits: credits(x.credits), reported: reported(x.runId) }))}

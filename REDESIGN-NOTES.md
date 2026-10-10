@@ -1,3 +1,69 @@
+# Third design review, 2026-10-09 (Claude Code)
+
+Branch `design-review-3`. Not committed, not pushed, not deployed. Abhinav asked for every finding from the third review (designer-reviewer brief with the Impeccable, Emil Kowalski and taste skills as lenses) to be built and shown locally.
+
+## What changed
+
+- **Phone first screen.** The header is one row (brand, dashboard link, an icon-only Theme switch) plus the tabs: 117px, was 213px. The tagline and the LinkedIn, GitHub and Email links are hidden under 700px; LinkedIn and GitHub are now in the footer beside the email. The receipt sits above the byline on a phone.
+- **Header.** Brand, tabs and page content share one left edge (176px at 1440). Tabs are grey; the current one is ink with a teal underline.
+- **Hero.** The lede lost its first sentence, which repeated the headline. The receipt now plays once when it is in view: 9.13 PROVISIONAL holds, counts to 11.87, the chip becomes FINAL, then CAUGHT lands (`app/hero-moments.tsx`). Without scripts it shows the provisional reading as before; with reduced motion it shows the settled state.
+- **Users say it too.** The three tiles are 202, 159 and 68. The corpus counts (14,791, 5,115, 1,059) moved into the source line. The dashboard card is solid and teal-tinted when `dashboardUrl` is set; the dashed style is kept for the unpublished case.
+- **How I worked** moved from `/` to a fold on `/evidence` ("How I got to this problem, in five steps").
+- **Metrics table.** On a phone each metric is a stacked block with "How it is counted" and "The decision it controls" labelled, so the third column is no longer off screen.
+- **Evidence.** The bar and column charts animate (they had lost their motion classes in the five-chart rebuild). The baseline of the cost bars is tinted orange and the meter columns are blue; red and green stay the verdict. Two subtitles changed to match ("The first part of each bar is the cheapest run", "Blue is what the panel showed").
+- **Chart motion** plays once (no replay on re-entry), bars 0.8s, dots stagger 20ms and start at 60% scale. Empty dots use `--ink2` so they can be seen.
+- **Prototype.** Replay 3.5s (was 6s), settle 1.2s (was 2.2s). The big figure and the progress bar are blue while provisional and turn ink at final; the figure is in the reading face so it no longer reads "11 . 87". FINAL fades in. The After verdict is dimmed with its chip hidden until a run has settled once, then the chip fades in. The After section also starts the replay if it is seen first. The receipt runs to the section rule.
+- **Session to Skill.** "The solution" band is gone; its title is now the demo's heading. The demo window opens at the top.
+- **Small things.** Problem-card figures stay on one line; the path rule stops at the last step; press feedback on switches and demo steps.
+
+## Explainer video on `/`, a trial (same day)
+
+Abhinav asked to see the 24.5 second explainer embedded on the front page. It sits between the hero and "Three problems, measured" as "The study in under half a minute": a plain `<video>` with controls, no autoplay, poster `public/video/run-receipt-explainer.jpg`, file `public/video/run-receipt-explainer.mp4` (1.8 MB). Source and rebuild steps are in PM-OS at `inbox/run-receipt-brag/`. He has not decided whether it stays.
+
+- The video's numbers are typed into its frames, which breaks the rule that every figure comes from `data/` through `lib/`. The caption says so. Re-render it if the data changes.
+- It adds about 720px to the page at 1440 and about 420px at 390. At phone width the text inside the frame is small; it needs full screen to read.
+- Checked in headless Chrome: loads, plays, 960 by 540 at desktop on the content's left edge, no sideways scroll at 390, no console errors, dark and light.
+
+## Header, Skill colour and the cost example (same day, at Abhinav's request)
+
+- **Header.** "Run Receipt" is larger (32px, was 19px). The dashboard link and Theme sit on the same row at the right; the link now reads "Perplexity reviews dashboard". The byline is on the line below the name, and LinkedIn, GitHub and Email on the line below that. Header is 170px at desktop. On a phone the dashboard link wraps under the name and the three links stay hidden (they are in the footer): 174px.
+- **Session to Skill colour.** Unchanged in the end. I tried the brand teal, then a mint green; he disliked both and asked for the original purple back (`#a394ff` dark, `#5b49c9` light). He still finds the purple a poor match for the teal, so this is open.
+- **Cost example.** He said 11.77 to 11.87 credits is too small a range to show the problem. The prototype's "Before you send" view now leads with the prompt whose repeat runs moved the most on one setting (12.14 to 21.96 credits, 29 s to 48 s, 3 runs), picked by `widestRepeatRuns` and `estimate`, with its prompt text from `data/skill/sessions.json`. The bank report run that is replayed keeps its own narrow range underneath, labelled as narrow. The home page's "Before you send" proof uses the same wide range.
+- **Still shows 11.77 to 11.87:** the hero receipt on `/` and the explainer video. Both are the receipt of recorded run 2, and that is run 2's real range, so swapping in another prompt's range there would mix two runs on one receipt. His call.
+
+## Metrics with numbers, and "What it could be worth" (same day, a draft for Abhinav to read)
+
+He asked for the success metrics to be more number-centric and for a business case, shown locally before deciding. Nothing here is approved.
+
+- **Metrics table** has two new columns: "In my runs" (a baseline from the 27 runs) and "Starting bar" (my proposal). New row: Range width, the counter-metric to hit rate.
+- **New numbers, all through `lib/study.ts` with tests (34 pass):** `rangeBacktest` (a range from the other runs of the same prompt and setting held the next run in 2 of 12; widened 20% at each end, 11 of 12; median width 7% and 49%) and `medianGapCredits` (2.64). The bars live in `PROPOSED` in the same file and are proposals, not measurements: 80% hit rate, 20% widening, width under 50%, meter gap under 2%, runs sent no more than 5% lower.
+- **"What it could be worth"** sits after the metrics: three per-run sums at the protocol rate of $0.01 a credit ($0.10, $0.03, $2.21 against $0.57), three levers with the inputs only Perplexity has, a break-even line, and a plain statement that I cannot size it.
+- **Plan prices** ($20 Pro, $200 Max) are in `data/business.json`. They come from third-party pricing guides found by web search on Oct 9, 2026, not from Perplexity's own plans page, and the page says so. Re-check on Perplexity's site before this ships.
+- The 12 backtest runs come from five prompts, so the 2 of 12 and 11 of 12 are counts on a very small sample, and the 20% widening was chosen after seeing the data. Say so if asked; a holdout it has not.
+- The home page is longer again: about 9,350px at phone width with the video and this section.
+
+## Verified
+
+`.next` deleted, then build, lint, `tsc` and 32 of 32 tests pass. In headless Chrome on the local build, with motion on:
+- Hero: fresh load and arriving by a tab click both go wait, final, caught. Reduced motion shows the settled state.
+- Evidence by tab click: bars and columns play; leaving and returning does not replay them.
+- Prototype: fresh load and by tab click reach final with the verdict revealed; switching task does not hide the verdict again.
+- No sideways scroll at 390 on any of the four tabs; no console errors.
+- Looked at: home, prototype After view and the meter chart at 1440 dark; home research and fix sections in light; home first screen, receipt and metrics at 390 dark.
+
+## Not done, and not checked
+
+- Hover styles are still not gated behind `@media (hover:hover)`. Colour-only, so low impact.
+- `DESIGN.md` is still out of date.
+- Not looked at after this pass: `/skill` and `/evidence` at phone width, `/skill` in light, the folded "How I got to this problem" steps. Not tested: Safari, Firefox, a real phone, a screen reader, a width under 360px.
+
+## For Abhinav to approve
+
+- The shorter lede: "The most expensive run cost 81% more than the cheapest, on the same setting. You can't budget for that, and 202 store reviews are from paying users who ran out of credits."
+- New line on the hero receipt after it settles: "The panel showed 9.13 at Finished." and the label "Final charge".
+- The 202 / 159 / 68 tiles and the longer source line.
+- The two Evidence subtitles, and the fold title "How I got to this problem, in five steps".
+
 # Draft: how the router decides, 2026-10-09 (Claude Code)
 
 A draft section at the bottom of `/receipt`, "How my own router decides". Abhinav asked for it and has not approved the wording.

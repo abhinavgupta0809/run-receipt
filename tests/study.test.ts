@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import type { Run } from "../lib/estimate.ts";
-import { fullMarks, medianLowPct, pairs, panelReadings, settingsFor, tally, widestRepeatRuns, type Gate } from "../lib/study.ts";
+import { fullMarks, medianGapCredits, medianLowPct, pairs, panelReadings, rangeBacktest, settingsFor, tally, widestRepeatRuns, type Gate } from "../lib/study.ts";
 
 const read = (name: string) => readFileSync(new URL(`../data/${name}`, import.meta.url), "utf8");
 const runs = (JSON.parse(read("runs.json")) as { runs: Run[] }).runs;
@@ -74,4 +74,14 @@ test("the research file synced from the reviews dashboard is internally consiste
   for (const k of [r.creditsRunOut, r.computerCredits, ...r.larger]) assert.ok(k.title && k.lowStar <= k.reviews && k.android + k.ios === k.reviews);
   assert.ok(r.labelCheck.matches <= r.labelCheck.n);
   assert.ok(r.quotes.length > 0 && r.quotes.every((q: { text: string; source: string; when: string; stars: number; tone: string; reviewId: string }) => q.text && q.source && q.when && q.reviewId && q.stars >= 1 && q.stars <= 5 && ["cost", "meter", "hybrid"].includes(q.tone)));
+});
+
+test("a range from the other runs rarely holds the next run until it is widened", () => {
+  // Five prompts were run more than once on one setting: 12 runs in all.
+  assert.deepEqual(rangeBacktest(runs), { hits: 2, n: 12, medianWidthPct: 7 });
+  assert.deepEqual(rangeBacktest(runs, 20), { hits: 11, n: 12, medianWidthPct: 49 });
+});
+
+test("the median gap between the panel at Finished and the final charge, in credits", () => {
+  assert.equal(medianGapCredits(panelReadings(runs)), 2.64);
 });
