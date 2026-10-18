@@ -1,3 +1,13 @@
+# Overview page and film, 2026-10-17 (Claude Code)
+
+Abhinav asked for an overview page at the front, like the Wispr Flow prototypes site, with a video showing both prototypes and a "Why listen to me" section.
+
+- **Routes:** `/` is the overview; Run Receipt moved back to `/receipt` (the redirect is removed); tabs are Overview, Run Receipt, Session to Skill, Evidence.
+- **Overview sections:** hero ("Same prompt, three runs, three prices.") with a card linking to the reviews dashboard (screenshot `public/img/reviews-dashboard.webp`, taken from the live dashboard on Oct 17); the film; "Two prototypes, one idea" (one card each); "How we'd know it worked" (one north star per prototype under a Perplexity-level goal, "Paying Computer users who stay subscribed", labelled my assumption); "Why listen to me" with four stats; "What's real and what's simulated".
+- **Film:** `public/video/run-receipt-overview.mp4` (37 s, 2.7 MB) and its poster. Source, plan and rebuild steps in PM-OS at `inbox/run-receipt-overview-film/`. Numbers are typed into the frames, so re-render it if the data changes. The old 24.5 s explainer and its fold on `/receipt` are removed.
+- **For Abhinav to approve:** the hero line, the "Why listen to me" lede ("I didn't guess..."), the Perplexity-level goal, and the evidence tags on the two cards ("Measured in my runs", "Seen in my sessions, to test").
+- **Verified:** build, lint, 34 of 34 tests; in headless Chrome on the production build, no sideways scroll at 390 on all five routes, light and dark, no console errors. Not checked: Safari, Firefox, a real phone.
+
 # One-minute template, 2026-10-17 (Claude Code)
 
 Abhinav asked for the template used on the Wispr Flow prototypes site: problem, solution with a Desktop/Phone toggle, metrics (north star, guardrails, supporting), trade-offs, research folded at the bottom. "Completely change and deploy."
