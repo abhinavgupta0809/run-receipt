@@ -1,3 +1,15 @@
+# One-minute template, 2026-10-17 (Claude Code)
+
+Abhinav asked for the template used on the Wispr Flow prototypes site: problem, solution with a Desktop/Phone toggle, metrics (north star, guardrails, supporting), trade-offs, research folded at the bottom. "Completely change and deploy."
+
+- **Tabs are now Run Receipt (`/`), Session to Skill (`/skill`), Evidence (`/evidence`).** `/receipt` is gone as a page; `next.config.ts` redirects it to `/#solution` (307).
+- **`/`** leads with the problem (the same-prompt 12.14 / 14.29 / 21.96 line, three coloured proof figures, one review quote), then the prototype, then three metric cards, three trade-off cards, and six folds holding the old sections (three problems with charts, what users say, the full metric table, what it could be worth, the film, limits). The animated hero receipt is removed (`app/hero-moments.tsx` deleted).
+- **The prototype is one app window** (`app/receipt/replay.tsx`): three moment tabs (Before you send, While it runs, After), a Send button, auto-advance to After 1.6 s after the charge settles, and a side panel with steps, task and mode switches and Reset. It no longer auto-plays on scroll. The wide 12.14 to 21.96 range is a one-line "Why a range" under the Before view; the main range is the replayed run's own.
+- **`/skill`** follows the same template; the demo sits in the same window and frame, its six steps moved into the side panel.
+- **Desktop / Phone:** `app/device.tsx`; the choice is saved as `run-receipt-device` and applied before paint by the head script (`html[data-device]`). Phone mode uses container queries to stack the window.
+- **New copy, for Abhinav to approve:** the problem lines, the metrics headlines, the trade-off cards on both pages, and the Session to Skill metrics. Those metrics (skills run again, offers turned down, a failed check never shown unflagged, offers accepted, slash-command share) are new proposals with no baseline.
+- **Verified:** build, lint, 34 of 34 tests. In headless Chrome on the production build: Send to After works with the verdict revealed, phone mode on both pages, light theme, no sideways scroll at 390 on all four routes, no console errors. Not checked: Safari, Firefox, a real phone, a screen reader.
+
 # Third design review, 2026-10-09 (Claude Code)
 
 Branch `design-review-3`. Not committed, not pushed, not deployed. Abhinav asked for every finding from the third review (designer-reviewer brief with the Impeccable, Emil Kowalski and taste skills as lenses) to be built and shown locally.

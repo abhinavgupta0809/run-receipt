@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { DeviceFrame } from "../device";
 
 export type DemoRun = { runId: string; when: string; credits: string; reported: string };
 
@@ -42,95 +43,99 @@ export default function Demo({ prompt, runs, file, command, name, checks, cost }
   const lines = file.split("\n");
 
   return (
-    <div className="demo" ref={root}>
-      <ol className="demo-steps" aria-label="Steps in the demo">
-        {STEPS.map((s, i) => (
-          <li key={s}>
-            <button type="button" onClick={() => go(i)} aria-current={i === step ? "step" : undefined} className={i < step ? "done" : undefined}>
-              <span>{i + 1}</span>{s}
-            </button>
-          </li>
-        ))}
-      </ol>
+    <div className="sk-demo" ref={root}>
+      <DeviceFrame>
+        <div className="rr-window sk-window">
+          <div className="rr-bar" aria-hidden="true"><span className="lights"><span /><span /><span /></span><span className="title">Computer · Sessions</span><span className="rr-tag">Prototype</span></div>
+          <div className="demo-window" aria-live="polite">
+            <aside className="demo-side">
+              <p className="demo-label">Your sessions</p>
+              <ul>
+                {runs.slice(0, shown + 1).map((r, i) => (
+                  <li key={r.runId} className={i === shown && step < 3 ? "demo-in now" : "demo-in"}>
+                    <b>App price comparison</b>
+                    <span>{r.when}</span>
+                    <span>{r.credits} credits</span>
+                  </li>
+                ))}
+              </ul>
+              {step >= 4 && (
+                <>
+                  <p className="demo-label">Your skills</p>
+                  <ul><li className="demo-in skill"><b>{name}</b><span>{command}</span></li></ul>
+                </>
+              )}
+            </aside>
 
-      <div className="demo-window" aria-live="polite">
-        <aside className="demo-side">
-          <p className="demo-label">Your sessions</p>
-          <ul>
-            {runs.slice(0, shown + 1).map((r, i) => (
-              <li key={r.runId} className={i === shown && step < 3 ? "demo-in now" : "demo-in"}>
-                <b>App price comparison</b>
-                <span>{r.when}</span>
-                <span>{r.credits} credits</span>
+            <div className="demo-main">
+              {step < 3 && (
+                <div key={`run-${shown}`} className="demo-in">
+                  <p className="demo-label">Run {shown + 1} of {runs.length}, recorded as run {run.runId}</p>
+                  <p className="demo-prompt">{prompt}</p>
+                  <div className="demo-output">
+                    <p><b>Output: a one-page comparison</b></p>
+                    <p>It reported {run.reported}.</p>
+                    {shown > 0 && run.reported !== first.reported && <p className="demo-flag">Run {first.runId} said something different for the same prompt.</p>}
+                    {shown > 0 && run.reported === first.reported && <p className="demo-quiet">Same answer as run {first.runId}.</p>}
+                  </div>
+                  {shown > 0 && <p className="demo-quiet">Typed out by hand again. Same words as before.</p>}
+                </div>
+              )}
+
+              {step === 3 && (
+                <div key="offer" className="demo-offer demo-in">
+                  <p className="demo-offer-title">You have run this {runs.length} times.</p>
+                  <p>Turn it into a skill? It keeps the prompt, the checks your past results failed, and what it cost.</p>
+                  <p className="demo-offer-actions">
+                    <button type="button" className="btn" onClick={() => go(4)}>Yes, build the skill</button>
+                    <button type="button" className="btn btn-quiet" onClick={() => go(0)}>Not now</button>
+                  </p>
+                </div>
+              )}
+
+              {step === 4 && (
+                <div key="file" className="demo-in">
+                  <p className="demo-label">skill.md, written from your {runs.length} sessions</p>
+                  <pre className="demo-file" tabIndex={0} aria-label="The skill file">
+                    {lines.map((l, i) => <span key={i} style={{ animationDelay: `${Math.min(i * 90, 2600)}ms` }} className={l.startsWith("#") ? "h" : undefined}>{l || " "}{"\n"}</span>)}
+                  </pre>
+                  <p className="demo-quiet">Plain Markdown, so anyone can read and edit it.</p>
+                </div>
+              )}
+
+              {step === 5 && (
+                <div key="call" className="demo-in">
+                  <p className="demo-label">Next time</p>
+                  <div className="demo-composer"><span className="demo-typed">{command}</span><i aria-hidden="true" /></div>
+                  <div className="demo-suggest">
+                    <b>{name}</b>
+                    <span>Your skill. {checks} checks run on the result. Past runs cost {cost} credits.</span>
+                  </div>
+                  <p className="demo-quiet">One command in place of retyping the prompt.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </DeviceFrame>
+      <aside className="rr-side">
+        <div className="side-block">
+          <h3>Steps</h3>
+          <ol className="demo-steps" aria-label="Steps in the demo">
+            {STEPS.map((s, i) => (
+              <li key={s}>
+                <button type="button" onClick={() => go(i)} aria-current={i === step ? "step" : undefined} className={i < step ? "done" : undefined}>
+                  <span>{i < step ? "✓" : i + 1}</span>{s}
+                </button>
               </li>
             ))}
-          </ul>
-          {step >= 4 && (
-            <>
-              <p className="demo-label">Your skills</p>
-              <ul><li className="demo-in skill"><b>{name}</b><span>{command}</span></li></ul>
-            </>
-          )}
-        </aside>
-
-        <div className="demo-main">
-          {step < 3 && (
-            <div key={`run-${shown}`} className="demo-in">
-              <p className="demo-label">Run {shown + 1} of {runs.length}, recorded as run {run.runId}</p>
-              <p className="demo-prompt">{prompt}</p>
-              <div className="demo-output">
-                <p><b>Output: a one-page comparison</b></p>
-                <p>It reported {run.reported}.</p>
-                {shown > 0 && run.reported !== first.reported && <p className="demo-flag">Run {first.runId} said something different for the same prompt.</p>}
-                {shown > 0 && run.reported === first.reported && <p className="demo-quiet">Same answer as run {first.runId}.</p>}
-              </div>
-              {shown > 0 && <p className="demo-quiet">Typed out by hand again. Same words as before.</p>}
-            </div>
-          )}
-
-          {step === 3 && (
-            <div key="offer" className="demo-offer demo-in">
-              <p className="demo-offer-title">You have run this {runs.length} times.</p>
-              <p>Turn it into a skill? It keeps the prompt, the checks your past results failed, and what it cost.</p>
-              <p className="demo-offer-actions">
-                <button type="button" className="btn" onClick={() => go(4)}>Yes, build the skill</button>
-                <button type="button" className="btn btn-quiet" onClick={() => go(0)}>Not now</button>
-              </p>
-            </div>
-          )}
-
-          {step === 4 && (
-            <div key="file" className="demo-in">
-              <p className="demo-label">skill.md, written from your {runs.length} sessions</p>
-              <pre className="demo-file" tabIndex={0} aria-label="The skill file">
-                {lines.map((l, i) => <span key={i} style={{ animationDelay: `${Math.min(i * 90, 2600)}ms` }} className={l.startsWith("#") ? "h" : undefined}>{l || " "}{"\n"}</span>)}
-              </pre>
-              <p className="demo-quiet">Plain Markdown, so anyone can read and edit it.</p>
-            </div>
-          )}
-
-          {step === 5 && (
-            <div key="call" className="demo-in">
-              <p className="demo-label">Next time</p>
-              <div className="demo-composer"><span className="demo-typed">{command}</span><i aria-hidden="true" /></div>
-              <div className="demo-suggest">
-                <b>{name}</b>
-                <span>Your skill. {checks} checks run on the result. Past runs cost {cost} credits.</span>
-              </div>
-              <p className="demo-quiet">One command in place of retyping the prompt.</p>
-            </div>
-          )}
+          </ol>
+          <button type="button" className="btn btn-quiet btn-sm" onClick={() => (playing ? setPlaying(false) : step === last ? replay() : setPlaying(true))}>
+            {playing ? "Pause" : step === last ? "Replay" : "Play"}
+          </button>
         </div>
-      </div>
-
-      <div className="demo-controls">
-        <button type="button" className="btn btn-quiet" onClick={() => (playing ? setPlaying(false) : step === last ? replay() : setPlaying(true))}>
-          {playing ? "Pause" : step === last ? "Replay" : "Play"}
-        </button>
-        <p className="small">
-          The three sessions, their credits and the price each one reported are recorded. The offer, the one-click build and the slash command are my proposal, shown as an illustration.
-        </p>
-      </div>
+        <p className="side-note">The three sessions, their credits and prices are recorded. The offer, the build and the command are my proposal.</p>
+      </aside>
     </div>
   );
 }

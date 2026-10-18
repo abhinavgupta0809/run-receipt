@@ -204,7 +204,7 @@ export default function Evidence() {
           </div>
         </details>
         <p className="sum-actions mt-8">
-          <Link href="/receipt" className="btn">See the fix on these runs</Link>
+          <Link href="/#solution" className="btn">See the fix on these runs</Link>
           <Link href="/" className="btn btn-quiet">Back to the problem</Link>
         </p>
       </section>

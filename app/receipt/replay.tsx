@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { Range } from "@/lib/estimate.ts";
 import type { Lane, ReplayData, TotalRow } from "@/lib/replay.ts";
 import type { PanelRun, SheetLane } from "@/lib/sheet.ts";
 import type { Check } from "@/lib/verify.ts";
+import { DeviceFrame } from "../device";
 import { credits, duration, money, pct, signed, span } from "../format";
 
 type Mode = "cloud" | "hybrid";
@@ -16,6 +16,7 @@ type Route = "Search" | "Your Mac" | "Cloud";
 const REPLAY_MS = 3500;
 const SETTLE_MS = 1200;
 const COUNT_MS = 900;
+const AFTER_MS = 1600;
 
 type Step = { name: string; route: Record<Mode, Route>; reason: Record<Mode, string>; check?: string };
 
@@ -63,26 +64,28 @@ const STEPS: Record<Task, Step[]> = {
 
 const ROUTE_CHIP: Record<Route, string> = { Search: "chip chip-search", "Your Mac": "chip chip-mac", Cloud: "chip chip-cloud" };
 
-const PROBLEMS = {
-  cost: { n: "1", title: "Cost is a surprise.", answer: "Before you send, the receipt gives a credit range and a time range taken from past runs of the same prompt." },
-  meter: { n: "2", title: "The credit meter reads low while you watch it.", answer: "While it runs, the count is marked provisional until the final charge lands." },
-  hybrid: { n: "3", title: "Hybrid mode is unpredictable.", answer: "After, the receipt says where each step ran, checks the numbers with code and offers a repair." },
-} as const;
+// One colour per problem, the same on every page: orange cost, blue meter, purple Hybrid.
+const MOMENTS = [
+  { tone: "cost", label: "Before you send", step: "See the cost before you send" },
+  { tone: "meter", label: "While it runs", step: "Watch the count settle" },
+  { tone: "hybrid", label: "After", step: "See what code caught" },
+] as const;
 
 export type WideExample = { label: string; setting: string; prompt: string | null; credits: Range; seconds: Range | null };
 
+// The prototype as one app window: three moments of one receipt, stepped through in order.
 export default function Replay({ data, wide }: { data: ReplayData; wide: WideExample }) {
   const [task, setTask] = useState<Task>("report");
   const [mode, setMode] = useState<Mode>("hybrid");
   const [stage, setStage] = useState<Stage>("plan");
+  const [view, setView] = useState(0);
   const [progress, setProgress] = useState(0);
   const [showWithheld, setShowWithheld] = useState(false);
   const [rerun, setRerun] = useState(false);
   // The After view holds its verdict back until a run has settled once, so the catch is seen to happen.
   const [revealed, setRevealed] = useState(false);
-  const meterRef = useRef<HTMLElement>(null);
-  const afterRef = useRef<HTMLElement>(null);
-  const autoPlayed = useRef(false);
+  const [afterSeen, setAfterSeen] = useState(false);
+  const body = useRef<HTMLDivElement>(null);
   const lane = task === "report" ? data[mode] : data.budget[mode];
   const steps = STEPS[task];
 
@@ -102,36 +105,30 @@ export default function Replay({ data, wide }: { data: ReplayData; wide: WideExa
       return () => clearTimeout(id);
     }
     if (stage === "final") {
-      const id = requestAnimationFrame(() => setRevealed(true));
-      return () => cancelAnimationFrame(id);
+      // Once the charge lands, the window moves on to the After view by itself, unless the reader went elsewhere.
+      const reveal = requestAnimationFrame(() => setRevealed(true));
+      const next = setTimeout(() => setView((v) => (v === 1 ? 2 : v)), AFTER_MS);
+      return () => { cancelAnimationFrame(reveal); clearTimeout(next); };
     }
   }, [stage]);
 
+  useEffect(() => {
+    if (view === 2 && revealed) setAfterSeen(true);
+  }, [view, revealed]);
+
+  const top = () => {
+    const screen = body.current?.closest(".device-screen");
+    if (screen && screen.scrollTop > 0) screen.scrollTo({ top: 0 });
+  };
+  const go = (v: number) => { setView(v); top(); };
+
   // With reduced motion the count does not animate: it goes straight to the settled reading.
-  const start = () => {
+  const send = () => {
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setProgress(still ? 1 : 0);
     setStage(still ? "final" : "running");
+    go(1);
   };
-
-  // The meter is the thing to remember, so it plays once by itself when it scrolls into view. If a reader
-  // lands on the After view first, that starts it too, so the verdict is never left waiting.
-  useEffect(() => {
-    const el = meterRef.current;
-    if (!el || autoPlayed.current) return;
-    const seen = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting) && !autoPlayed.current) {
-          autoPlayed.current = true;
-          start();
-        }
-      },
-      { threshold: 0.35 },
-    );
-    seen.observe(el);
-    if (afterRef.current) seen.observe(afterRef.current);
-    return () => seen.disconnect();
-  }, []);
 
   const reset = (next: Mode = mode, nextTask: Task = task) => {
     setTask(nextTask);
@@ -140,160 +137,144 @@ export default function Replay({ data, wide }: { data: ReplayData; wide: WideExa
     setProgress(0);
     setShowWithheld(false);
     setRerun(false);
-  };
-  const play = () => {
-    autoPlayed.current = true;
-    start();
-    meterRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" });
+    setRevealed(false);
+    setAfterSeen(false);
+    go(0);
   };
 
+  const done = [stage !== "plan", stage === "final", afterSeen];
   const ranOn = (["Your Mac", "Cloud", "Search"] as Route[]).map((route) => ({ route, count: steps.filter((s) => s.route[mode] === route).length })).filter((r) => r.count > 0);
+  const chips = ranOn.map((r) => <span key={r.route} className={ROUTE_CHIP[r.route]}>{r.route} · {r.count}</span>);
 
   return (
-    <main className="proto mx-auto w-full max-w-6xl px-4 pb-20 sm:px-8">
-      <header className="proto-intro">
-        <h1>One receipt, three moments</h1>
-        <p>
-          Each part of the receipt answers one of the three problems. Below is a recorded run of mine, replayed: <b>{TASKS[task].label}</b>, {mode === "hybrid" ? "with Hybrid on and the private steps on my Mac" : "run fully in the cloud for comparison"}, run {lane.run.id}.
-        </p>
-      </header>
-
-      <section className="pv cost" aria-labelledby="pv-cost">
-        <ProblemSide id="pv-cost" {...PROBLEMS.cost} />
-        <div className="tape">
-          <Head>Before you send</Head>
-          <p className="pv-prompt">&ldquo;{wide.prompt ?? wide.label}&rdquo;</p>
-          <dl className="mt-4 space-y-2">
-            <Item label="This run will cost" value={`${span(wide.credits, credits)} credits`} note={`from ${wide.credits.n} measured runs of this prompt, ${wide.setting}`} strong />
-            {wide.seconds && <Item label="It will take" value={span(wide.seconds, duration)} note="timed on the same runs" />}
-          </dl>
-          <p className="pv-fact">This is the widest range I measured for one prompt on one setting. Without the receipt, nothing on screen says which end you will get.</p>
-          <hr className="tear" />
-          <Head>The run replayed below</Head>
-          <p className="pv-prompt">&ldquo;{TASKS[task].prompt}&rdquo;</p>
-          {lane.estimate ? (
-            <p className="pv-fact">
-              Its range is narrow because the past runs landed close together: <b className="fig">{span(lane.estimate.credits, credits)} credits</b>
-              {lane.estimate.seconds ? <>, <b className="fig">{span(lane.estimate.seconds, duration)}</b></> : null}, from {lane.estimate.credits.n} measured {lane.estimate.credits.n === 1 ? "run" : "runs"} of this task.
-            </p>
-          ) : (
-            <p className="small mt-3">No past runs of this task, so no range yet.</p>
-          )}
-          <button type="button" onClick={play} className="btn mt-5">
-            {stage === "plan" ? "Send this run" : "Send it again"}
-          </button>
-          <details className="fold">
-            <summary>Where each step will run</summary>
-            <ol className="mt-2">
-              {steps.map((s, i) => (
-                <li key={s.name} className="grid grid-cols-[1.5rem_minmax(0,1fr)] border-b border-grid py-2.5 last:border-b-0">
-                  <span className="fig text-ink3">{i + 1}</span>
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                      <span className="font-semibold">{s.name}</span>
-                      <span className={ROUTE_CHIP[s.route[mode]]}>{s.route[mode]}</span>
-                    </div>
-                    <p className="small">
-                      {s.reason[mode]}
-                      {s.check && <span className="text-ink">. Check: {s.check}.</span>}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-            <p className="small mt-3">The plan is the prototype&apos;s own. Perplexity shows one total per run, so the range is for the whole run, not per step.</p>
-          </details>
-        </div>
-      </section>
-
-      <section className="pv meter" aria-labelledby="pv-meter" ref={meterRef}>
-        <ProblemSide id="pv-meter" {...PROBLEMS.meter} />
-        <div className="tape">
-          <Head>While it runs</Head>
-          <Meter lane={lane} steps={steps} stage={stage} progress={progress} />
-          {lane.estimate?.undercountPct && (
-            <p className="pv-fact">
-              On past runs of this task, the count at Finished was <b className="fig">{span(lane.estimate.undercountPct, pct)}</b> below the final charge.
-            </p>
-          )}
-          {stage === "final" && (
-            <button type="button" onClick={play} className="btn btn-quiet mt-4">
-              Play it again
-            </button>
-          )}
-        </div>
-      </section>
-
-      <section className="pv hybrid" aria-labelledby="pv-hybrid" ref={afterRef} data-pending={revealed ? "false" : "true"}>
-        <ProblemSide id="pv-hybrid" {...PROBLEMS.hybrid} answer={mode === "hybrid" ? PROBLEMS.hybrid.answer : "This is the comparison run: the same task done fully in the cloud, with nothing on the Mac. The receipt runs the same checks."} />
-        <div className="tape">
-          <Head>After</Head>
-          <p className="pv-ran">
-            <span>Where the steps ran</span>
-            {ranOn.map((r) => (
-              <span key={r.route} className={ROUTE_CHIP[r.route]}>
-                {r.route} · {r.count}
-              </span>
-            ))}
-          </p>
-          {task === "report" ? (
-            <Receipt data={data} lane={data[mode]} showWithheld={showWithheld} onShowWithheld={() => setShowWithheld((v) => !v)} rerun={rerun} onRerun={() => setRerun((v) => !v)} />
-          ) : (
-            <BudgetReceipt lane={data.budget[mode]} other={data.budget[mode === "hybrid" ? "cloud" : "hybrid"]} filled={showWithheld} onFill={() => setShowWithheld((v) => !v)} />
-          )}
-          <hr className="tear" />
-          <div className="leader text-xl font-bold">
-            <span>TOTAL</span>
-            <span className="dots" />
-            <span className="fig">{credits(lane.run.final)} credits</span>
+    <div className="rr-demo">
+      <DeviceFrame>
+        <div className="rr-window">
+          <div className="rr-bar" aria-hidden="true">
+            <span className="lights"><span /><span /><span /></span>
+            <span className="title">Computer · {TASKS[task].label}</span>
+            <span className="rr-tag">Prototype</span>
           </div>
-          <p className="small mt-1 text-right">
-            about {money(lane.run.final / 100)}, {lane.finalReadNote}
-          </p>
-        </div>
-      </section>
+          <nav className="rr-moments" aria-label="Moments of the receipt">
+            {MOMENTS.map((m, i) => (
+              <button key={m.tone} type="button" className={m.tone} onClick={() => go(i)} aria-current={view === i ? "step" : undefined} data-done={done[i]}>
+                <span>{i + 1}</span>{m.label}
+              </button>
+            ))}
+          </nav>
+          <div className="rr-body" ref={body} aria-live="polite">
+            {view === 0 && (
+              <div key={`before-${task}-${mode}`} className="rr-view cost">
+                <p className="rr-prompt">{TASKS[task].prompt}</p>
+                <div className="tape">
+                  <Head>Before you send</Head>
+                  {lane.estimate ? (
+                    <dl className="mt-3 space-y-2">
+                      <Item label="This run will cost" value={`${span(lane.estimate.credits, credits)} credits`} note={`from ${lane.estimate.credits.n} past ${lane.estimate.credits.n === 1 ? "run" : "runs"} of this task`} strong />
+                      {lane.estimate.seconds && <Item label="It will take" value={span(lane.estimate.seconds, duration)} />}
+                    </dl>
+                  ) : (
+                    <p className="small mt-3">No past runs of this task, so no range yet.</p>
+                  )}
+                  <p className="pv-ran mt-4"><span>Where it runs</span>{chips}</p>
+                  <button type="button" onClick={send} className="btn mt-5">{stage === "plan" ? "Send this run" : "Send it again"}</button>
+                </div>
+                <p className="rr-why">
+                  Why a range: one prompt of mine cost <b className="fig">{span(wide.credits, credits)}</b> credits on the same setting.
+                </p>
+                <details className="fold">
+                  <summary>Where each step will run</summary>
+                  <ol className="mt-2">
+                    {steps.map((s, i) => (
+                      <li key={s.name} className="grid grid-cols-[1.5rem_minmax(0,1fr)] border-b border-grid py-2.5 last:border-b-0">
+                        <span className="fig text-ink3">{i + 1}</span>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                            <span className="font-semibold">{s.name}</span>
+                            <span className={ROUTE_CHIP[s.route[mode]]}>{s.route[mode]}</span>
+                          </div>
+                          <p className="small">
+                            {s.reason[mode]}
+                            {s.check && <span className="text-ink">. Check: {s.check}.</span>}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                  <p className="small mt-3">The plan is the prototype&apos;s own. Perplexity shows one total per run, so the range is for the whole run, not per step.</p>
+                </details>
+              </div>
+            )}
 
-      <section className="proto-try" aria-labelledby="pv-try">
-        <h2 id="pv-try">Try another recorded run</h2>
-        <div className="proto-switches">
-          <fieldset>
-            <legend className="small mb-1.5 font-semibold">Task</legend>
-            <div className="switch">
-              {(Object.keys(TASKS) as Task[]).map((t) => (
-                <button key={t} type="button" onClick={() => reset(mode, t)} aria-pressed={task === t}>
-                  {TASKS[t].label}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-          <fieldset>
-            <legend className="small mb-1.5 font-semibold">Private steps ran on</legend>
-            <div className="switch">
-              {(["hybrid", "cloud"] as const).map((m) => (
-                <button key={m} type="button" onClick={() => reset(m)} aria-pressed={mode === m}>
-                  {m === "hybrid" ? "My Mac (Hybrid)" : "Cloud, for comparison"}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-        </div>
-        <p className="small mt-5 max-w-[70ch]">
-          A replay of recorded runs. Credit and time figures were measured on my own Perplexity account, on a made-up bank file ({data.txnCount} rows). This is a standalone prototype and does not hook into Perplexity&apos;s product.
-        </p>
-        <p className="small mt-2">
-          <Link href="/evidence">The measured runs behind these numbers</Link> · <Link href="/router">How my own router splits the work</Link>
-        </p>
-      </section>
-    </main>
-  );
-}
+            {view === 1 && (
+              <div key="while" className="rr-view meter">
+                <div className="tape">
+                  <Head>While it runs</Head>
+                  <Meter lane={lane} steps={steps} stage={stage} progress={progress} />
+                  {lane.estimate?.undercountPct && (
+                    <p className="pv-fact">
+                      On past runs of this task, the count at Finished was <b className="fig">{span(lane.estimate.undercountPct, pct)}</b> below the final charge.
+                    </p>
+                  )}
+                  {stage === "plan" && <button type="button" onClick={send} className="btn mt-4">Send this run</button>}
+                </div>
+              </div>
+            )}
 
-function ProblemSide({ id, n, title, answer }: { id: string; n: string; title: string; answer: string }) {
-  return (
-    <div className="pv-problem">
-      <p className="pv-n" aria-hidden="true">{n}</p>
-      <h2 id={id}>{title}</h2>
-      <p className="pv-answer">{answer}</p>
+            {view === 2 && (
+              <div key="after" className="rr-view hybrid" data-pending={revealed ? "false" : "true"}>
+                <div className="tape">
+                  <Head>After</Head>
+                  <p className="pv-ran mt-2"><span>Where the steps ran</span>{chips}</p>
+                  {task === "report" ? (
+                    <Receipt data={data} lane={data[mode]} showWithheld={showWithheld} onShowWithheld={() => setShowWithheld((v) => !v)} rerun={rerun} onRerun={() => setRerun((v) => !v)} />
+                  ) : (
+                    <BudgetReceipt lane={data.budget[mode]} other={data.budget[mode === "hybrid" ? "cloud" : "hybrid"]} filled={showWithheld} onFill={() => setShowWithheld((v) => !v)} />
+                  )}
+                  <hr className="tear" />
+                  <div className="leader text-xl font-bold">
+                    <span>TOTAL</span>
+                    <span className="dots" />
+                    <span className="fig">{credits(lane.run.final)} credits</span>
+                  </div>
+                  <p className="small mt-1 text-right">
+                    about {money(lane.run.final / 100)}, {lane.finalReadNote}
+                  </p>
+                  {!revealed && <button type="button" onClick={send} className="btn mt-4">Send the run first</button>}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </DeviceFrame>
+
+      <aside className="rr-side">
+        <div className="side-block">
+          <h3>Steps</h3>
+          <ol className="rr-steps">
+            {MOMENTS.map((m, i) => (
+              <li key={m.tone} className={m.tone} data-done={done[i]} aria-current={view === i ? "step" : undefined}>
+                <span>{done[i] ? "✓" : i + 1}</span>{m.step}
+              </li>
+            ))}
+          </ol>
+          <button type="button" className="btn btn-quiet btn-sm" onClick={() => reset()}>Reset</button>
+        </div>
+        <div className="side-block">
+          <h3>Try another recorded run</h3>
+          <div className="switch">
+            {(Object.keys(TASKS) as Task[]).map((t) => (
+              <button key={t} type="button" onClick={() => reset(mode, t)} aria-pressed={task === t}>{TASKS[t].label}</button>
+            ))}
+          </div>
+          <div className="switch">
+            {(["hybrid", "cloud"] as const).map((m) => (
+              <button key={m} type="button" onClick={() => reset(m)} aria-pressed={mode === m}>{m === "hybrid" ? "Hybrid, on my Mac" : "All cloud"}</button>
+            ))}
+          </div>
+        </div>
+        <p className="side-note">Replays my recorded run {lane.run.id} on a made-up bank file ({data.txnCount} rows). Nothing connects to Perplexity.</p>
+      </aside>
     </div>
   );
 }
@@ -380,7 +361,7 @@ function Meter({ lane, steps, stage, progress }: { lane: { mode: Mode; run: Pane
 
       <p className="mt-3 min-h-[3.2em] text-[0.9375rem]" aria-live="polite">
         {stage === "plan" ? (
-          <>The count starts when you press &ldquo;Send this run&rdquo; above.</>
+          <>The count starts when you send the run.</>
         ) : stage === "running" ? (
           <>
             <span className="fig text-ink3">

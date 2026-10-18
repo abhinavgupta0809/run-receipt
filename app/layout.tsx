@@ -18,13 +18,13 @@ const serif = localFont({ src: "./fonts/LibreBaskerville.ttf", variable: "--font
 const EMAIL = "agupta7@tepper.cmu.edu";
 const LINKEDIN = "https://www.linkedin.com/in/abhinavgupta0809";
 const GITHUB = "https://github.com/abhinavgupta0809";
-// Applied before first paint so a saved light theme does not flash dark.
+// Applied before first paint so a saved light theme does not flash dark, and a saved phone preview does not jump.
 // Also marks that scripts run, so motion that waits for a script never hides anything without one.
-const THEME_SCRIPT = `document.documentElement.dataset.js="1";try{var t=localStorage.getItem("run-receipt-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
+const THEME_SCRIPT = `document.documentElement.dataset.js="1";try{var t=localStorage.getItem("run-receipt-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;var d=localStorage.getItem("run-receipt-device");if(d==="phone")document.documentElement.dataset.device=d}catch(e){}`;
 
 export const metadata: Metadata = {
-  title: { default: "Run Receipt: a case study of Perplexity Computer", template: "%s | Run Receipt" },
-  description: "Measured runs of Perplexity Computer and a prototype receipt for each agent run. A standalone replay of recorded runs.",
+  title: { default: "Run Receipt: a prototype for Perplexity Computer", template: "%s | Run Receipt" },
+  description: "A receipt for every agent run: a cost range before you send, a provisional count while it runs, numbers checked by code after. Replays my own measured runs.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

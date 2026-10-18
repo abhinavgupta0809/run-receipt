@@ -12,7 +12,7 @@ export default function RouterPage() {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 pb-20 sm:px-8">
       <p className="small pt-8">
-        <Link href="/receipt">Back to the prototype</Link>
+        <Link href="/#solution">Back to the prototype</Link>
       </p>
       <Routing />
     </main>
