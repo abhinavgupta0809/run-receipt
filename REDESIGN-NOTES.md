@@ -24,6 +24,10 @@ Abhinav asked for the template used on the Wispr Flow prototypes site: problem, 
 
 Branch `design-review-3`. Not committed, not pushed, not deployed. Abhinav asked for every finding from the third review (designer-reviewer brief with the Impeccable, Emil Kowalski and taste skills as lenses) to be built and shown locally.
 
+## Who it's for, and why care, 2026-10-20
+
+From a senior product reviewer's notes: say who it's for, what problem it solves and why anyone should care, and show the research as numbers. The overview gets a who / problem / why band under the hero, a research stat band ("The work behind it"), and two persona cards that lead into the prototypes (replacing the prototype cards). /receipt and /skill open with a persona card above Problem. All figures come from data/ (research.json, business.json, runs.json, skill/sessions.json). Components: `app/persona.tsx`; styles at the end of `app/globals.css`.
+
 ## What changed
 
 - **Phone first screen.** The header is one row (brand, dashboard link, an icon-only Theme switch) plus the tabs: 117px, was 213px. The tagline and the LinkedIn, GitHub and Email links are hidden under 700px; LinkedIn and GitHub are now in the footer beside the email. The receipt sits above the byline on a phone.

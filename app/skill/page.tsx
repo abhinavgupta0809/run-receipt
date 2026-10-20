@@ -5,6 +5,7 @@ import { checkOutput, disagreements, parsePrices, skillFile, type App } from "@/
 import { range, type Run } from "@/lib/estimate.ts";
 import { credits, span } from "../format";
 import DeviceToggle from "../device";
+import { Persona } from "../persona";
 import Demo from "./demo";
 
 export const metadata: Metadata = {
@@ -58,6 +59,17 @@ export default function SkillPage() {
         <p className="sum-lede">Do a task {sessions.length} times, get asked once, and it becomes a skill you call with a slash command.</p>
         <p className="sum-actions"><a href="#solution" className="btn">Try the prototype ↓</a></p>
       </header>
+
+      <section aria-label="Who it's for">
+        <Persona tone="sk" icon="repeat" name="The repeat-task user"
+          line="Runs the same job again and again: a weekly report, a price check, a filing."
+          facts={[
+            { icon: "repeat", value: String(sessions.length), label: "runs of one prompt, word for word, in one day of my sessions" },
+            { icon: "coins", value: `${credits(cost.min)}–${credits(cost.max)}`, label: "credits paid each time to redo the same steps" },
+          ]}
+          why={<>Repeated work is where a tool becomes a habit. If Computer keeps the recipe, people come back to it instead of a blank prompt (my assumption).</>}
+          evidence="Based on my own sessions. No review asks for this yet, so it needs testing with users." />
+      </section>
 
       <section aria-labelledby="problem-h">
         <p className="tp-eyebrow">Problem</p>

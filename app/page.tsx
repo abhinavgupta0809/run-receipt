@@ -3,19 +3,29 @@ import path from "node:path";
 import Link from "next/link";
 import { PROPOSED, PROTOCOL, rangeBacktest } from "@/lib/study.ts";
 import { load } from "./data";
+import { credits, span } from "./format";
+import { PersonaLink, StatBand, WhoWhatWhy } from "./persona";
 
-type Research = { dashboardUrl: string | null; corpus: { reviews: number; from: string; to: string } };
+type Research = {
+  dashboardUrl: string | null;
+  corpus: { reviews: number; from: string; to: string };
+  labelCheck: { matches: number; n: number };
+  creditsRunOut: { reviews: number; lowStar: number };
+};
 const n = (x: number) => x.toLocaleString("en-US");
 const LINKEDIN = "https://www.linkedin.com/in/abhinavgupta0809";
 const GITHUB = "https://github.com/abhinavgupta0809";
 
-// The front page, in the shape of the Wispr Flow prototypes overview: hero, film, the two prototypes,
-// how we'd know it worked, why listen to me, and what is real. Figures come from data/ through lib/.
+// The front page: hero, who / problem / why, film, the research as numbers, the two personas and their
+// prototypes, how we'd know it worked, why listen to me, and what is real. Figures come from data/ through lib/.
 export default function Overview() {
   const { runs, replay: d } = load();
   const h = d.headline;
   const research = JSON.parse(readFileSync(path.join(process.cwd(), "data", "research.json"), "utf8")) as Research;
   const raw = rangeBacktest(runs);
+  const business = JSON.parse(readFileSync(path.join(process.cwd(), "data", "business.json"), "utf8")) as { plans: { name: string; usdPerMonth: number }[] };
+  // "Pro ($20) or Max ($200)": list prices from third-party guides, see data/business.json.
+  const plans = business.plans.map((p) => `${p.name} ($${p.usdPerMonth})`).join(" or ");
 
   return (
     <main className="ov">
@@ -23,7 +33,7 @@ export default function Overview() {
         <div>
           <p className="tp-independent">Two prototypes for Perplexity Computer · independent, not made by or with Perplexity</p>
           <h1>Same prompt, three runs, <em>three prices.</em></h1>
-          <p className="sum-lede">I measured {h.runs} runs of Computer on my own account. Here are two moments where it leaves you guessing, and what I&apos;d build so it doesn&apos;t.</p>
+          <p className="sum-lede">I measured {h.runs} Computer runs on my own account. Two moments leave paying users guessing. Here&apos;s what I&apos;d build.</p>
         </div>
         {research.dashboardUrl && (
           <a className="ov-data" href={research.dashboardUrl} target="_blank" rel="noopener" aria-label={`Real customer data, analyzed: open the Perplexity app reviews dashboard (${n(research.corpus.reviews)} reviews)`}>
@@ -33,6 +43,14 @@ export default function Overview() {
           </a>
         )}
       </header>
+
+      <section aria-label="Who it's for, the problem, and why it matters">
+        <WhoWhatWhy
+          who={<><b>Paying Computer users</b> on {plans} a month, who hand it real multi-step work.</>}
+          what={<><b>No price before you send.</b> One prompt cost {span(h.widestRepeat.credits, credits)} credits across {h.widestRepeat.credits.n} runs on one setting.</>}
+          why={<><b>{n(research.creditsRunOut.reviews)} paying users</b> wrote a review after running out of credits; {n(research.creditsRunOut.lowStar)} gave 1 or 2 stars. If people can&apos;t predict a price, they send fewer runs (my assumption).</>}
+        />
+      </section>
 
       <section className="ov-film" aria-label="Both prototypes in 37 seconds">
         <figure>
@@ -44,33 +62,37 @@ export default function Overview() {
         </figure>
       </section>
 
+      <section aria-labelledby="work-h">
+        <div className="ov-head">
+          <h2 id="work-h" className="sum-h2">The work behind it</h2>
+          <p>Customer data first, then my own measured runs, then the prototypes.</p>
+        </div>
+        <StatBand label="The research, by the numbers" stats={[
+          { icon: "reviews", value: n(research.corpus.reviews), label: "app reviews parsed and labelled" },
+          { icon: "check", value: `${research.labelCheck.matches}/${research.labelCheck.n}`, label: "labels matched my hand check" },
+          { icon: "play", value: String(h.runs), label: "Computer runs measured, every credit logged" },
+          { icon: "layers", value: String(h.taskTypes), label: "task types, from bank reports to price lookups" },
+          { icon: "build", value: "2", label: "working prototypes" },
+        ]} />
+      </section>
+
       <section aria-labelledby="protos-h">
         <div className="ov-head">
-          <h2 id="protos-h" className="sum-h2">Two prototypes, one idea</h2>
+          <h2 id="protos-h" className="sum-h2">Two people, two prototypes</h2>
           <p>Computer should tell you what a run will cost, and remember the work you keep repeating.</p>
         </div>
-        <ol className="ov-protos">
-          <li>
-            <Link className="ov-proto is-rr" href="/receipt">
-              <span className="ov-n">01</span>
-              <span className="ov-when">When the price is a surprise</span>
-              <span className="ov-name">Run Receipt</span>
-              <span className="ov-line">A cost range before you send, an honest count while it runs, numbers checked by code after.</span>
-              <span className="ov-ev strong">Measured in my runs</span>
-              <span className="ov-go" aria-hidden="true">→</span>
-            </Link>
-          </li>
-          <li>
-            <Link className="ov-proto is-sk" href="/skill">
-              <span className="ov-n">02</span>
-              <span className="ov-when">When you repeat a task</span>
-              <span className="ov-name">Session to Skill</span>
-              <span className="ov-line">Do a task three times, get asked once, then call it with a slash command.</span>
-              <span className="ov-ev hyp">Seen in my sessions, to test</span>
-              <span className="ov-go" aria-hidden="true">→</span>
-            </Link>
-          </li>
-        </ol>
+        <div className="ov-personas">
+          <PersonaLink href="/receipt" tone="rr" icon="coins" name="The paying power user"
+            line={`Pays ${plans} a month and gives Computer real work: reports, research, file checks.`}
+            pain={{ icon: "reviews", value: n(research.creditsRunOut.reviews), label: "paying users reviewed after running out of credits" }}
+            proto="Run Receipt" protoLine="A cost range before you send, an honest count while it runs, sums checked by code after."
+            ev={{ cls: "strong", text: "Measured in my runs" }} />
+          <PersonaLink href="/skill" tone="sk" icon="repeat" name="The repeat-task user"
+            line="Runs the same job again and again: a weekly report, a price check."
+            pain={{ icon: "receipt", value: "3×", label: "one prompt, word for word, in a day of my sessions, paid for each time" }}
+            proto="Session to Skill" protoLine="Do a task three times, get asked once, then call it with a slash command."
+            ev={{ cls: "hyp", text: "Seen in my sessions, to test" }} />
+        </div>
       </section>
 
       <section aria-labelledby="tree-h">
@@ -101,18 +123,11 @@ export default function Overview() {
       <section aria-labelledby="about-h" className="ov-about">
         <div className="ov-about-copy">
           <h2 id="about-h" className="sum-h2">Why listen to me</h2>
-          <p className="ov-lede">I didn&apos;t guess. I ran the tasks on my own account, recorded every credit, and graded the results against files with a known answer.</p>
-          <p>How: I labelled {n(research.corpus.reviews)} public app reviews in a <a href={research.dashboardUrl ?? "#"} target="_blank" rel="noopener">reviews dashboard</a>, then ran {h.runs} measured runs across {h.taskTypes} task types before designing anything (<Link href="/evidence">evidence</Link>).</p>
-          <p><strong>Abhinav Gupta.</strong> MS Product Management at Carnegie Mellon (Tepper), December 2026. About six years in product, growth and strategy at Flipkart, ShareChat, Meesho and Tata 1mg. I ran the study, built the dashboard and built these prototypes, with Claude Code as a coding partner.</p>
-          <p className="ov-buttons"><a className="btn" href={LINKEDIN} target="_blank" rel="noopener">LinkedIn</a><a className="btn btn-quiet" href={GITHUB} target="_blank" rel="noopener">GitHub</a></p>
+          <p className="ov-lede">I didn&apos;t guess. I ran the tasks on my own account, logged every credit, and graded results against files with a known answer.</p>
+          <p><strong>Abhinav Gupta.</strong> MS Product Management, Carnegie Mellon (Tepper), Dec 2026. Six years in product and growth at Flipkart, ShareChat, Meesho and Tata 1mg.</p>
+          <p className="ov-buttons"><a className="btn" href={LINKEDIN} target="_blank" rel="noopener">LinkedIn</a><a className="btn btn-quiet" href={GITHUB} target="_blank" rel="noopener">GitHub</a><Link className="btn btn-quiet" href="/evidence">Evidence</Link></p>
         </div>
-        <dl className="ov-stats" aria-label="By the numbers">
-          <div><dt>{h.runs}</dt><dd>measured runs of Computer, {PROTOCOL.period}</dd></div>
-          <div><dt>{h.taskTypes}</dt><dd>task types, from bank reports to price lookups</dd></div>
-          <div><dt>{n(research.corpus.reviews)}</dt><dd>app reviews read and labelled</dd></div>
-          <div><dt>2</dt><dd>working prototypes</dd></div>
-        </dl>
-        <p className="ov-fine">One account, one Mac, one week. Every comparison is a count, not a rate.</p>
+        <p className="ov-fine">One account, one Mac, one week ({PROTOCOL.period}). Every comparison is a count, not a rate. Built with Claude Code as a coding partner.</p>
       </section>
 
       <section className="ov-real" aria-label="What's real and what's simulated">

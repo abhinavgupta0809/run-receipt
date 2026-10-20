@@ -8,6 +8,7 @@ import { Dots } from "../charts";
 import { load } from "../data";
 import DeviceToggle from "../device";
 import { credits, money, runs as runCount, span } from "../format";
+import { Persona } from "../persona";
 import Replay from "./replay";
 
 type Cluster = { title: string; reviews: number; lowStar: number; android: number; ios: number };
@@ -68,6 +69,17 @@ export default function ReceiptPage() {
         <p className="sum-actions"><a href="#solution" className="btn">Try the prototype ↓</a></p>
         <p className="tp-by">By <b>Abhinav Gupta</b>, product manager (six years), MS Product Management at Carnegie Mellon. {h.runs} runs on my own account, {PROTOCOL.period}.</p>
       </header>
+
+      <section aria-label="Who it's for">
+        <Persona tone="rr" icon="coins" name="The paying power user"
+          line={`On ${business.plans.map((p) => p.name).join(" or ")}, giving Computer multi-step work that it bills by the credit.`}
+          facts={[
+            { icon: "reviews", value: n(research.creditsRunOut.reviews), label: "paying users reviewed after running out of credits" },
+            { icon: "coins", value: n(research.computerCredits.reviews), label: "reviews say Computer burned through their credits" },
+          ]}
+          why={<>A price you can&apos;t predict is hard to budget, so people send fewer runs or stop paying. That&apos;s my assumption; retention data would confirm or kill it.</>}
+          evidence={`An archetype drawn from ${n(research.corpus.reviews)} public app reviews, not from interviews.`} />
+      </section>
 
       <section aria-labelledby="problem-h">
         <p className="tp-eyebrow">Problem</p>
