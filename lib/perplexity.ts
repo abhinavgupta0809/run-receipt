@@ -8,7 +8,12 @@ export function client(): Perplexity {
   if (!process.env.PERPLEXITY_API_KEY) {
     throw new Error("PERPLEXITY_API_KEY is not set. Create a key at https://console.perplexity.ai and add it to .env.local.");
   }
-  return new Perplexity();
+  return new Perplexity({ defaultHeaders: integrationHeaders() });
+}
+
+// Identifies Run Receipt to Perplexity, only when requests go to the public API host.
+export function integrationHeaders(baseURL = process.env.PERPLEXITY_BASE_URL || "https://api.perplexity.ai"): Record<string, string> {
+  return new URL(baseURL).hostname === "api.perplexity.ai" ? { "X-Pplx-Integration": "run-receipt" } : {};
 }
 
 export type Citation = { title?: string; url: string };
