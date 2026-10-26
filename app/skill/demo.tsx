@@ -1,16 +1,27 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { DeviceFrame } from "../device";
+import AnswerView from "./answer";
 
-export type DemoRun = { runId: string; when: string; credits: string; reported: string };
+export type DemoSession = { label: string; when: string; steps: number; did: string[] };
+export type DemoRun = { apps: string; text: string; seconds: number; cost: string; pages: number; ranOn: string };
 
-const STEPS = ["Do the task", "Do it again", "A third time", "Get asked", "Skill is written", "Call it"] as const;
-const HOLD = [2600, 2600, 2800, 3200, 5200, 4200]; // ms each step stays up during autoplay
+const STEPS = ["Price two apps", "Price two others", "Get asked", "Skill is written", "Use it on new apps", "Real answer"] as const;
+const HOLD = [3400, 3400, 3800, 5200, 3600, 6500]; // ms each step stays up during autoplay
 
-// The proposal as a moving picture: three real sessions, then the offer, the Markdown skill and the slash command.
-// Sessions, credits and reported prices are recorded. The offer, the build and the command are the proposal.
-export default function Demo({ prompt, runs, file, command, name, checks, cost }: { prompt: string; runs: DemoRun[]; file: string; command: string; name: string; checks: number; cost: string }) {
+// The proposal as a moving picture: two recorded pricing sessions on different apps, the offer, the general
+// skill, then a real run on apps the sessions never touched. Everything but the offer was recorded or run for real.
+export default function Demo({ sessions, changed, file, name, command, inputs, checks, run }: {
+  sessions: DemoSession[];
+  changed: { what: string; values: string[] };
+  file: string;
+  name: string;
+  command: string;
+  inputs: string[];
+  checks: number;
+  run: DemoRun;
+}) {
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -37,9 +48,8 @@ export default function Demo({ prompt, runs, file, command, name, checks, cost }
 
   const go = (n: number) => { setPlaying(false); setStep(n); };
   const replay = () => { setStep(0); setPlaying(true); };
-  const shown = Math.min(step, runs.length - 1);
-  const run = runs[shown];
-  const first = runs[0];
+  const shown = Math.min(step, sessions.length - 1);
+  const session = sessions[shown];
   const lines = file.split("\n");
 
   return (
@@ -51,15 +61,15 @@ export default function Demo({ prompt, runs, file, command, name, checks, cost }
             <aside className="demo-side">
               <p className="demo-label">Your sessions</p>
               <ul>
-                {runs.slice(0, shown + 1).map((r, i) => (
-                  <li key={r.runId} className={i === shown && step < 3 ? "demo-in now" : "demo-in"}>
-                    <b>App price comparison</b>
-                    <span>{r.when}</span>
-                    <span>{r.credits} credits</span>
+                {sessions.slice(0, shown + 1).map((s, i) => (
+                  <li key={s.label} className={i === shown && step < 2 ? "demo-in now" : "demo-in"}>
+                    <b>Pricing analysis</b>
+                    <span>{s.label}</span>
+                    <span>{s.when} · {s.steps} steps</span>
                   </li>
                 ))}
               </ul>
-              {step >= 4 && (
+              {step >= 3 && (
                 <>
                   <p className="demo-label">Your skills</p>
                   <ul><li className="demo-in skill"><b>{name}</b><span>{command}</span></li></ul>
@@ -68,50 +78,56 @@ export default function Demo({ prompt, runs, file, command, name, checks, cost }
             </aside>
 
             <div className="demo-main">
-              {step < 3 && (
-                <div key={`run-${shown}`} className="demo-in">
-                  <p className="demo-label">Run {shown + 1} of {runs.length}, recorded as run {run.runId}</p>
-                  <p className="demo-prompt">{prompt}</p>
-                  <div className="demo-output">
-                    <p><b>Output: a one-page comparison</b></p>
-                    <p>It reported {run.reported}.</p>
-                    {shown > 0 && run.reported !== first.reported && <p className="demo-flag">Run {first.runId} said something different for the same prompt.</p>}
-                    {shown > 0 && run.reported === first.reported && <p className="demo-quiet">Same answer as run {first.runId}.</p>}
-                  </div>
-                  {shown > 0 && <p className="demo-quiet">Typed out by hand again. Same words as before.</p>}
+              {step < 2 && (
+                <div key={`session-${shown}`} className="demo-in">
+                  <p className="demo-label">Session {shown + 1} of {sessions.length} · recorded {session.when}</p>
+                  <p className="demo-prompt">Pricing analysis: {session.label}, monthly vs yearly billing</p>
+                  <ol className="demo-did">
+                    {session.did.map((d, i) => <li key={i} style={{ animationDelay: `${300 + i * 260}ms` }}>{d}</li>)}
+                  </ol>
+                  {shown > 0 && <p className="demo-quiet">Same method as session 1. Different apps.</p>}
                 </div>
               )}
 
-              {step === 3 && (
+              {step === 2 && (
                 <div key="offer" className="demo-offer demo-in">
-                  <p className="demo-offer-title">You have run this {runs.length} times.</p>
-                  <p>Turn it into a skill? It keeps the prompt, the checks your past results failed, and what it cost.</p>
+                  <p className="demo-offer-title">You&apos;ve done a pricing analysis twice, on different apps.</p>
+                  <p>Save the method as a skill? What changed between your sessions becomes an input, so it works on any app.</p>
+                  <p className="demo-changed"><span>{changed.values.join("  →  ")}</span><b>becomes the input “products”</b></p>
                   <p className="demo-offer-actions">
-                    <button type="button" className="btn" onClick={() => go(4)}>Yes, build the skill</button>
+                    <button type="button" className="btn" onClick={() => go(3)}>Yes, build the skill</button>
                     <button type="button" className="btn btn-quiet" onClick={() => go(0)}>Not now</button>
                   </p>
                 </div>
               )}
 
-              {step === 4 && (
+              {step === 3 && (
                 <div key="file" className="demo-in">
-                  <p className="demo-label">skill.md, written from your {runs.length} sessions</p>
+                  <p className="demo-label">SKILL.md, written from your {sessions.length} sessions</p>
                   <pre className="demo-file" tabIndex={0} aria-label="The skill file">
-                    {lines.map((l, i) => <span key={i} style={{ animationDelay: `${Math.min(i * 90, 2600)}ms` }} className={l.startsWith("#") ? "h" : undefined}>{l || " "}{"\n"}</span>)}
+                    {lines.map((l, i) => <span key={i} style={{ animationDelay: `${Math.min(i * 70, 2600)}ms` }} className={l.startsWith("#") ? "h" : undefined}>{l || " "}{"\n"}</span>)}
                   </pre>
-                  <p className="demo-quiet">Plain Markdown, so anyone can read and edit it.</p>
+                  <p className="demo-quiet">No app names in the steps. They only show up as examples.</p>
+                </div>
+              )}
+
+              {step === 4 && (
+                <div key="call" className="demo-in">
+                  <p className="demo-label">Next time, on apps you never recorded</p>
+                  <div className="demo-composer"><span className="demo-typed" style={{ "--typed": `${command.length}ch` } as CSSProperties}>{command}</span><i aria-hidden="true" /></div>
+                  <p className="demo-chips" aria-label="Input: products"><span>products</span>{run.apps.split(", ").map((a) => <b key={a}>{a}</b>)}</p>
+                  <div className="demo-suggest">
+                    <b>{name}</b>
+                    <span>Your skill. Inputs: {inputs.join(", ")}. {checks} checks before it answers.</span>
+                  </div>
                 </div>
               )}
 
               {step === 5 && (
-                <div key="call" className="demo-in">
-                  <p className="demo-label">Next time</p>
-                  <div className="demo-composer"><span className="demo-typed">{command}</span><i aria-hidden="true" /></div>
-                  <div className="demo-suggest">
-                    <b>{name}</b>
-                    <span>Your skill. {checks} checks run on the result. Past runs cost {cost} credits.</span>
-                  </div>
-                  <p className="demo-quiet">One command in place of retyping the prompt.</p>
+                <div key="answer" className="demo-in">
+                  <p className="demo-label">Perplexity&apos;s answer, run for real on {run.ranOn}</p>
+                  <AnswerView text={run.text} className="demo-answer" />
+                  <p className="demo-quiet">{run.seconds} s · {run.cost} · {run.pages} pages read · Agent API with the saved skill</p>
                 </div>
               )}
             </div>
@@ -134,7 +150,7 @@ export default function Demo({ prompt, runs, file, command, name, checks, cost }
             {playing ? "Pause" : step === last ? "Replay" : "Play"}
           </button>
         </div>
-        <p className="side-note">The three sessions, their credits and prices are recorded. The offer, the build and the command are my proposal.</p>
+        <p className="side-note">Real: the two sessions, the skill and the answer, recorded with my extension and run on Perplexity&apos;s Agent API. My proposal: the offer inside Computer.</p>
       </aside>
     </div>
   );

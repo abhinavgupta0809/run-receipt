@@ -1,3 +1,15 @@
+# Session to Skill runs on Perplexity, 2026-10-25 (Claude Code)
+
+Abhinav asked to rebuild Microsoft's skill-recorder idea on Perplexity and to make the skill general: do a pricing analysis on different tools, get one pricing-analysis skill, not a Notion/Obsidian one.
+
+- **Pipeline:** `extension/` (MV3 recorder: pages, clicks, fields, copies, screenshots, a typed goal; password, card and one-time-code fields never saved) exports a recording. `lib/skillwriter.ts` turns one or more recordings into one general SKILL.md through the Agent API (`anthropic/claude-sonnet-5-5`), checks that no visited site's name leaked into the general text and retries once. `lib/perplexity.ts` saves it with the Skills API and runs it. `scripts/record-to-skill.ts` does the whole chain.
+- **Data:** `data/skill/live/`: two recordings (Notion vs Obsidian, Todoist vs Bear, recorded in Chrome for Testing driven by Claude Code), `SKILL.md` (`software-plan-pricing-comparison`), the plan, `write.json` (cost, model, saved skill id) and `run.json` (one real run on Linear, Figma and Slack: 27 s, $0.045).
+- **`/skill`:** the demo now shows the two sessions, the offer, the general skill, the command on new apps and the real answer. A new Proof section shows recorded → written → saved and run, the replayed answer, and a live run form. The live run calls `app/api/skill-run` and needs `DEMO_PASSCODE` and `PERPLEXITY_API_KEY` in the environment; without them it says live runs are off. Each live run costs about $0.04.
+- **Overview:** persona line, "what's real" fold and film caption updated. The film was re-rendered (43 s) with the new Session to Skill scene.
+- **For Abhinav to approve:** all new copy on `/skill` (lede, solution heading, Proof section, trade-offs, limits) and the film scene.
+- **Verified:** build, lint, 58 of 58 tests; on the production build in headless Chrome, all six demo steps, direct load and arriving by tab, the replayed answer, one live run through the form (16 s, $0.041), a wrong passcode returning 401, no sideways scroll at 390. Not checked: Safari, Firefox, a real phone, loading the extension in Comet.
+- **Known:** answers sometimes cite `[web:N]` markers that don't map to pages, so the page lists the pages each run read; prices in the runs are as Perplexity returned them and are not checked by hand.
+
 # Overview page and film, 2026-10-17 (Claude Code)
 
 Abhinav asked for an overview page at the front, like the Wispr Flow prototypes site, with a video showing both prototypes and a "Why listen to me" section.
@@ -26,7 +38,7 @@ Branch `design-review-3`. Not committed, not pushed, not deployed. Abhinav asked
 
 ## Who it's for, and why care, 2026-10-20
 
-From a senior product reviewer's notes: say who it's for, what problem it solves and why anyone should care, and show the research as numbers. The overview gets a who / problem / why band under the hero, a research stat band ("The work behind it"), and two persona cards that lead into the prototypes (replacing the prototype cards). /receipt and /skill open with a persona card above Problem. All figures come from data/ (research.json, business.json, runs.json, skill/sessions.json). Components: `app/persona.tsx`; styles at the end of `app/globals.css`.
+From a senior product reviewer's notes: say who it's for, what problem it solves and why anyone should care, and show the research as numbers. The overview gets a who / problem / why band under the hero, a research stat band ("The work behind it"), and two persona cards that lead into the prototypes (replacing the prototype cards). /receipt and /skill open with a persona card above Problem. All figures come from data/ (research.json, business.json, runs.json, skill/sessions.json). Components: `app/persona.tsx`; styles at the end of `app/globals.css`. The overview film was re-rendered to match (40 s): scene 2 is now the two persona cards, held 3 s so they can be read, and each demo scene names who it is for.
 
 ## What changed
 

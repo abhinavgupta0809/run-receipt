@@ -1,0 +1,96 @@
+{
+  "checks": [
+    "Every product in the input list has prices for both monthly and yearly billing, or a stated reason one is missing (for example, no monthly option, or free only).",
+    "Each price comes from the vendor's official pricing or FAQ page, not from a third-party blog or a stale search snippet.",
+    "The plan name matches the exact tier on the page, and free tiers are labeled as free rather than omitted.",
+    "The billing period is stated for each price, and any yearly price shown as a per-month equivalent is labeled as such, with the annual total given if the page shows it.",
+    "Currency, unit (per seat, per user, per account, per month, per year) and any minimum seat count or tax note are recorded for each price.",
+    "The monthly toggle state was read from the page content, not assumed from the default view; if the toggle could not be confirmed, the answer says so.",
+    "Yearly versus monthly savings are computed in code or checked by hand, and the percentage is compared with any discount the vendor states on its page.",
+    "The date the prices were checked is stated in the answer, and any regional or promotional pricing is flagged.",
+    "If two sources disagree, the discrepancy is reported and the more authoritative or more recent source is used."
+  ],
+  "description": "Use when asked to compare paid plans of two or more software products or apps, especially monthly versus yearly billing. Triggers: pricing analysis, plan comparison, subscription cost comparison, monthly vs annual price.",
+  "inputs": [
+    {
+      "description": "Products or apps whose paid plans should be compared. One or more.",
+      "example": "Notion, Obsidian",
+      "name": "products",
+      "required": true
+    },
+    {
+      "description": "Billing periods to capture for each plan.",
+      "example": "monthly and yearly",
+      "name": "billing_periods",
+      "required": false
+    },
+    {
+      "description": "Optional plan tiers to focus on, if the user does not want every paid tier.",
+      "example": "individual paid plans only",
+      "name": "plan_scope",
+      "required": false
+    },
+    {
+      "description": "Currency or region the prices should be reported in, if it matters.",
+      "example": "USD",
+      "name": "currency",
+      "required": false
+    }
+  ],
+  "intent": "Produce an accurate side-by-side comparison of paid plan prices across several software products, showing monthly and yearly billing for each plan, with the date checked and the source.",
+  "name": "software-plan-pricing-comparison",
+  "output": "A short comparison table with one row per product and plan, with columns for monthly price, yearly price (per-month equivalent and annual total where shown), billing unit, currency, yearly savings percentage, and source URL. Below the table, add the date checked, notes on caveats such as free tiers, add-on pricing, seat minimums or regional pricing, and a one- or two-line takeaway on which billing period saves most.",
+  "recorded_steps": [
+    "Session 1: Opened a plain-HTML web search page.",
+    "Session 1: Searched for the first product's pricing plans.",
+    "Session 1: Opened the first product's official pricing page, which showed yearly billing by default.",
+    "Session 1: Switched the billing toggle to monthly to see the monthly prices.",
+    "Session 1: Opened the second product's official pricing page.",
+    "Session 1: Clicked the monthly tab to see monthly prices for its paid add-on plans.",
+    "Session 2: Opened a plain-HTML web search page.",
+    "Session 2: Searched for the first product's pricing plans.",
+    "Session 2: Opened the first product's official pricing page, which showed yearly billing by default.",
+    "Session 2: Clicked the monthly option on the billing toggle.",
+    "Session 2: Searched again for the second product's paid-tier price.",
+    "Session 2: Opened the second product's official FAQ page on features and price."
+  ],
+  "steps": [
+    "For each product in the list, search the web for its official pricing page, using a query like \"<product> pricing plans\".",
+    "Choose the vendor's official pricing page or official pricing FAQ from the results over third-party reviews.",
+    "Fetch the page and read every paid plan name, price, billing unit (per seat, per user, per account) and currency.",
+    "Note which billing period the page shows by default, since many pages default to yearly.",
+    "Find the price for the other billing period. The monthly/yearly toggle may be rendered by script, so look in the fetched HTML, embedded JSON or page text for both price sets.",
+    "If the toggle is not in the fetched text, try a pricing API endpoint, a print or alternate view, or the vendor's help-center or FAQ page that lists prices for both periods.",
+    "If a product has only one billing period, or its core app is free with paid add-ons, record exactly that and list each paid add-on separately.",
+    "Record any discount the vendor states for yearly billing, plus seat minimums, taxes and regional pricing notes.",
+    "Use code to calculate the yearly per-month equivalent, the annual total and the percentage saved versus monthly billing for each plan.",
+    "Put the results in one table covering all products, with a source URL for each row.",
+    "Run the checks and fix any gaps before answering."
+  ],
+  "variations": [
+    {
+      "values": [
+        "Notion and Obsidian",
+        "Todoist and Bear"
+      ],
+      "what": "Products being compared"
+    },
+    {
+      "values": [
+        "notion pricing plans",
+        "todoist pricing plans",
+        "bear app pro price"
+      ],
+      "what": "Search query used to find the pricing page"
+    },
+    {
+      "values": [
+        "Official pricing page with a pay monthly/pay yearly toggle",
+        "Pricing page with a monthly/yearly tab",
+        "Pricing page with a monthly/yearly switch",
+        "Official FAQ page listing the paid tier's prices"
+      ],
+      "what": "Kind of page that holds the prices and how billing periods are shown"
+    }
+  ]
+}

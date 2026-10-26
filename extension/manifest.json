@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Session to Skill recorder",
+  "version": "0.1.0",
+  "description": "Record a browser task once, then turn it into a Perplexity skill. Nothing leaves this computer until you export it.",
+  "permissions": ["tabs", "storage", "unlimitedStorage"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": { "default_popup": "popup.html", "default_title": "Session to Skill" },
+  "content_scripts": [{ "matches": ["http://*/*", "https://*/*"], "js": ["content.js"], "run_at": "document_idle" }]
+}

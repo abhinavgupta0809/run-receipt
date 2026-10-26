@@ -1,73 +1,80 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { Metadata } from "next";
-import { checkOutput, disagreements, parsePrices, skillFile, type App } from "@/lib/skill.ts";
+import { checkOutput, disagreements, parsePrices, type App } from "@/lib/skill.ts";
 import { range, type Run } from "@/lib/estimate.ts";
-import { credits, span } from "../format";
+import { day, friendly, sessionLabel } from "@/lib/livedemo.ts";
+import type { SkillPlan } from "@/lib/skillwriter.ts";
+import type { Citation } from "@/lib/perplexity.ts";
+import { credits } from "../format";
 import DeviceToggle from "../device";
 import { Persona } from "../persona";
+import AnswerView from "./answer";
 import Demo from "./demo";
+import LiveRun from "./live";
 
 export const metadata: Metadata = {
   title: "Session to Skill",
-  description: "Do a task three times, get asked once, and your sessions become a skill you can call with a slash command.",
+  description: "Do a pricing analysis on two different apps, get asked once, and the method becomes a skill that works on any app. Written and run on Perplexity's Agent API.",
 };
 
 const read = (name: string) => readFileSync(path.join(process.cwd(), "data", name), "utf8");
-const SKILL_NAME = "App price comparison";
-const WORDS = ["zero", "one", "two", "three", "four", "five", "six"];
-const countWord = (x: number) => WORDS[x] ?? String(x);
-const usd = (n: number) => `$${n.toFixed(2).replace(/\.00$/, "")}`;
+const usd = (n: number, digits = 2) => `$${n.toFixed(digits).replace(/\.00$/, "")}`;
+const host = (u: string) => new URL(u).hostname.replace(/^www\./, "");
+const EXAMPLE = "Pricing analysis for Canva, Miro and Loom: compare their paid plans for one user, monthly vs yearly billing.";
 
 type Sessions = { task: string; prompt: string; variation: string; apps: App[]; sessions: { runId: string; when: string; file: string }[] };
+type LiveSession = { goal: string; recordedOn: string; events: number; screenshots: number; lines: string[] };
+type Written = { model: string; costUsd: number; leaks: string[]; writtenOn: string; skillId?: string };
+type LiveRunData = { question: string; ranOn: string; seconds: number; model: string; text: string; citations: Citation[]; searched: Citation[]; costUsd: number };
 
-// The one-minute template: problem, solution (the demo), metrics, trade-offs, then research in folds.
-// Built at build time from three real sessions that used the same prompt.
+// The one-minute template: problem, solution (the demo), proof on Perplexity, metrics, trade-offs, then research in folds.
+// The demo and the proof are built from data/skill/live: two recorded sessions, the skill written from them, one real run.
+// The research fold keeps the three Computer runs of one prompt that started the idea.
 export default function SkillPage() {
+  const live = JSON.parse(read("skill/live/sessions.json")) as LiveSession[];
+  const plan = JSON.parse(read("skill/live/skill-plan.json")) as SkillPlan;
+  const written = JSON.parse(read("skill/live/write.json")) as Written;
+  const run = JSON.parse(read("skill/live/run.json")) as LiveRunData;
+  const file = read("skill/live/SKILL.md");
+  const name = file.match(/^name: (.+)$/m)![1];
+  const command = `/${name}`;
+  const apps = (run.question.match(/for (.+?):/)?.[1] ?? "").replace(/ and /g, ", ");
+  const appWords = apps.split(", ").map((a) => a.toLowerCase());
+  const official = run.searched.filter((c) => appWords.some((a) => host(c.url).includes(a)) && /pric/.test(c.url));
+  const products = plan.variations.find((v) => /product/i.test(v.what)) ?? plan.variations[0];
+  const totalSteps = live.reduce((t, s) => t + s.lines.length, 0);
+  const totalShots = live.reduce((t, s) => t + s.screenshots, 0);
+
+  // The three Computer runs of one prompt that started the idea.
   const s = JSON.parse(read("skill/sessions.json")) as Sessions;
   const runs = (JSON.parse(read("runs.json")) as { runs: Run[] }).runs;
-  const sessions = s.sessions.map((x) => {
+  const first = s.sessions.map((x) => {
     const md = read(`skill/${x.file}`);
-    const run = runs.find((r) => r.id === x.runId);
-    if (!run) throw new Error(`run ${x.runId} is not in runs.json`);
-    return { runId: x.runId, when: x.when, credits: run.final, seconds: run.seconds, prices: parsePrices(md), checks: checkOutput(md, s.apps) };
+    const r = runs.find((y) => y.id === x.runId);
+    if (!r) throw new Error(`run ${x.runId} is not in runs.json`);
+    return { runId: x.runId, when: x.when, credits: r.final, prices: parsePrices(md), checks: checkOutput(md, s.apps) };
   });
-  const diffs = disagreements(sessions);
-  const cost = range(sessions.map((x) => x.credits))!;
-  const checkNames = sessions[0].checks.map((c) => c.name);
-  // The one price the runs disagreed on, as each run reported it.
-  const d = diffs[0];
-  const reported = (runId: string) => {
-    const v = d?.values.find((x) => x.runId === runId);
-    return v && d ? `${d.plan} at ${usd(v.value)} a month` : "its prices";
-  };
-  const file = skillFile({
-    name: SKILL_NAME,
-    template: s.prompt,
-    inputs: [],
-    rules: [],
-    checks: checkNames,
-    cost: `${cost.min.toFixed(2)} to ${cost.max.toFixed(2)} credits, from ${cost.n} measured runs of this prompt.`,
-  });
-  const command = `/${SKILL_NAME.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+  const cost = range(first.map((x) => x.credits))!;
+  const d = disagreements(first)[0];
 
   return (
     <main className="sk tp">
       <header className="tp-intro">
         <p className="tp-independent">Prototype · independent, not made by or with Perplexity</p>
         <h1>Session to Skill</h1>
-        <p className="sum-lede">Do a task {sessions.length} times, get asked once, and it becomes a skill you call with a slash command.</p>
-        <p className="sum-actions"><a href="#solution" className="btn">Try the prototype ↓</a></p>
+        <p className="sum-lede">Do a pricing analysis on two different apps, get asked once, and the method becomes a skill that works on any app.</p>
+        <p className="sum-actions"><a href="#solution" className="btn">Try the prototype ↓</a> <a href="#proof" className="btn btn-quiet">See it run on Perplexity</a></p>
       </header>
 
       <section aria-label="Who it's for">
         <Persona tone="sk" icon="repeat" name="The repeat-task user"
-          line="Runs the same job again and again: a weekly report, a price check, a filing."
+          line="Runs the same kind of job again and again: a price check, a weekly report, a filing."
           facts={[
-            { icon: "repeat", value: String(sessions.length), label: "runs of one prompt, word for word, in one day of my sessions" },
+            { icon: "repeat", value: String(first.length), label: "runs of one pricing prompt, word for word, in one day of my sessions" },
             { icon: "coins", value: `${credits(cost.min)}–${credits(cost.max)}`, label: "credits paid each time to redo the same steps" },
           ]}
-          why={<>Repeated work is where a tool becomes a habit. If Computer keeps the recipe, people come back to it instead of a blank prompt (my assumption).</>}
+          why={<>Repeated work is where a tool becomes a habit. If Computer keeps the method, people come back to it instead of a blank prompt (my assumption).</>}
           evidence="Based on my own sessions. No review asks for this yet, so it needs testing with users." />
       </section>
 
@@ -76,7 +83,7 @@ export default function SkillPage() {
         <h2 id="problem-h" className="tp-statement">You only know a task is worth saving after you&apos;ve repeated it. Then a skill starts from a blank page.</h2>
         <p className="tp-quote">
           <span className="tp-tag">My test</span>
-          <span>I ran one prompt {sessions.length} times, word for word, in a day. On Oct 2 to 4, 2026 the session menu had no save-as-skill option.</span>
+          <span>I ran one pricing prompt {first.length} times, word for word, in a day. On Oct 2 to 4, 2026 the session menu had no save-as-skill option.</span>
         </p>
       </section>
 
@@ -84,19 +91,60 @@ export default function SkillPage() {
         <div className="solution-head">
           <div>
             <p className="tp-eyebrow">Solution</p>
-            <h2 id="solution-h" className="sum-h2">The skill comes out of the work: {sessions.length} runs, one offer, one command</h2>
+            <h2 id="solution-h" className="sum-h2">The skill comes out of the work: two sessions on different apps, one offer, one skill for any app</h2>
           </div>
           <DeviceToggle />
         </div>
         <Demo
-          prompt={s.prompt}
-          runs={sessions.map((x) => ({ runId: x.runId, when: x.when, credits: credits(x.credits), reported: reported(x.runId) }))}
+          sessions={live.map((x) => ({ label: sessionLabel(x.goal), when: day(x.recordedOn), steps: x.lines.length, did: x.lines.map(friendly).filter((l): l is string => l !== null) }))}
+          changed={products}
           file={file}
+          name={name}
           command={command}
-          name={SKILL_NAME}
-          checks={checkNames.length}
-          cost={span(cost, credits)}
+          inputs={plan.inputs.map((i) => i.name.replace(/_/g, " "))}
+          checks={plan.checks.length + 1}
+          run={{ apps, text: run.text, seconds: run.seconds, cost: usd(run.costUsd, 3), pages: run.searched.length, ranOn: day(run.ranOn) }}
         />
+      </section>
+
+      <section id="proof" aria-labelledby="proof-h">
+        <p className="tp-eyebrow">Proof</p>
+        <h2 id="proof-h" className="sum-h2">It runs on Perplexity today: two recordings in, one skill out, a real answer back</h2>
+        <ol className="lv-steps">
+          <li>
+            <span className="lv-n">1</span>
+            <h3>Recorded</h3>
+            <p className="lv-big">{live.length} sessions</p>
+            <p>{live.map((x) => sessionLabel(x.goal)).join(" and ")}. {totalSteps} steps and {totalShots} screenshots, captured by my browser extension. Password and card fields are never saved.</p>
+          </li>
+          <li>
+            <span className="lv-n">2</span>
+            <h3>Written</h3>
+            <p className="lv-big"><code>{name}</code></p>
+            <p>{plan.inputs.length} inputs, {plan.steps.length} steps, {plan.checks.length + 1} checks. Code checked that no app name made it into the steps. Written by {written.model.split("/")[1]} through the Agent API for {usd(written.costUsd, 3)}.</p>
+          </li>
+          <li>
+            <span className="lv-n">3</span>
+            <h3>Saved and run</h3>
+            <p className="lv-big">{run.seconds} s · {usd(run.costUsd, 3)}</p>
+            <p>Saved with Perplexity&apos;s Skills API, then asked about {apps.replace(/, ([^,]+)$/, " and $1")}: apps it never saw. It read {run.searched.length} pages and answered.</p>
+          </li>
+        </ol>
+
+        <div className="lv-replay">
+          <p className="lv-meta"><span>Recorded run</span><span>{day(run.ranOn)}</span><span>{run.model}</span></p>
+          <p className="lv-q">{run.question}</p>
+          <AnswerView text={run.text} />
+          <p className="lv-sources"><b>Official pages it read:</b> {official.map((c, i) => <span key={c.url}>{i > 0 && " · "}<a href={c.url} target="_blank" rel="noreferrer">{host(c.url)}{new URL(c.url).pathname.replace(/\/$/, "")}</a></span>)}</p>
+          <p className="lv-note">Prices as Perplexity returned them on {day(run.ranOn)}. I haven&apos;t checked them by hand.{/not stated|doesn.t (list|publish|state)|did not state/i.test(run.text) && <> Where a page doesn&apos;t publish a price, it says so instead of guessing one.</>}</p>
+        </div>
+
+        <LiveRun example={EXAMPLE} skill={name} />
+
+        <details className="rfold lv-file">
+          <summary><strong>The skill file it wrote</strong><span>Plain Markdown, exactly as saved to Perplexity</span></summary>
+          <pre className="demo-file sk-raw">{file}</pre>
+        </details>
       </section>
 
       <section aria-labelledby="metrics-h">
@@ -107,7 +155,7 @@ export default function SkillPage() {
             <span className="bm-label">North star</span>
             <p className="bm-name">Skills run again</p>
             <p className="bm-formula">Skills run at least twice in the 14 days after saving ÷ skills saved from an offer.</p>
-            <p className="bm-now">No baseline yet: only I have used it. In my own sessions, one prompt came back {sessions.length} times in a day.</p>
+            <p className="bm-now">No baseline yet: only I have used it. In my own sessions, one prompt came back {first.length} times in a day.</p>
           </article>
           <article className="bm-card">
             <span className="bm-label">Guardrails</span>
@@ -120,7 +168,7 @@ export default function SkillPage() {
             <span className="bm-label">Supporting</span>
             <ul className="bm-list">
               <li><span>Offers accepted ÷ offers shown</span><span className="th">set after baseline</span></li>
-              <li><span>Repeat prompts sent as a slash command</span><span className="th">set after baseline</span></li>
+              <li><span>Skill runs on apps not in the recordings ÷ all skill runs</span><span className="th">set after baseline</span></li>
             </ul>
           </article>
         </div>
@@ -131,9 +179,9 @@ export default function SkillPage() {
         <p className="tp-eyebrow">Trade-offs</p>
         <h2 id="trade-h" className="sum-h2">What I gave up, on purpose</h2>
         <div className="tradeoffs">
-          <article className="trade"><h3>Ask after {countWord(sessions.length)} runs, never auto-save</h3><p><b>Over</b>saving skills silently</p><p><b>Cost</b>fewer skills get made</p></article>
+          <article className="trade"><h3>Ask after two sessions of the same kind, never auto-save</h3><p><b>Over</b>saving skills silently</p><p><b>Cost</b>fewer skills get made</p></article>
+          <article className="trade"><h3>A model writes the general method</h3><p><b>Over</b>keeping the exact prompt</p><p><b>Cost</b>it can over-generalize, so you see the file before it&apos;s saved</p></article>
           <article className="trade"><h3>Plain Markdown, not a hidden config</h3><p><b>Over</b>a polished settings screen</p><p><b>Cost</b>looks rough to people new to AI</p></article>
-          <article className="trade"><h3>Keep the prompt, don&apos;t rewrite it</h3><p><b>Over</b>a model generalising the sessions</p><p><b>Cost</b>one skill per exact task, no inputs yet</p></article>
         </div>
       </section>
 
@@ -153,72 +201,45 @@ export default function SkillPage() {
               <article>
                 <Icon kind="write" />
                 <h3>Writing a skill is hard if AI is not your job.</h3>
-                <p>A skill needs a prompt, inputs, rules and a way to check the result. Most people have never written one.</p>
+                <p>A skill needs steps, inputs and a way to check the result. Most people have never written one.</p>
               </article>
               <article className="sk-seen">
                 <Icon kind="eye" />
                 <h3>What I saw</h3>
-                <p>I ran one prompt {sessions.length} times, word for word, in a day. On Oct 2 to 4, 2026 the session menu showed no save-as-skill option and the skill builder had no test step. I did not check one menu.</p>
+                <p>I ran one prompt {first.length} times, word for word, in a day. On Oct 2 to 4, 2026 the session menu showed no save-as-skill option and the skill builder had no test step. I did not check one menu.</p>
               </article>
             </div>
             <p className="sum-note sk-after">My read of the gap. I have not interviewed Perplexity users about Skills.</p>
           </details>
           <details className="rfold sk-result">
-            <summary><strong>From {sessions.length} runs to one skill</strong><span>The real sessions, and the skill they become</span></summary>
-            <div className="sk-out">
-              <div className="sk-runs">
-                <h3>You did this {sessions.length} times</h3>
-                <p className="sk-prompt">&ldquo;{s.prompt}&rdquo;</p>
-                <ol>
-                  {sessions.map((x) => (
-                    <li key={x.runId}>
-                      <span>Run {x.runId}</span>
-                      <span className="sk-when">{x.when}</span>
-                      <b className="fig">{credits(x.credits)} credits</b>
-                    </li>
-                  ))}
-                </ol>
-                {d && (
-                  <p className="sk-diff">
-                    The answers disagreed once: <b>{d.plan}</b> came back at {d.values.map((v) => usd(v.value)).join(", ")} a month. So the skill checks its own result.
-                  </p>
-                )}
-              </div>
-              <div className="sk-arrow" aria-hidden="true">
-                <svg width="44" height="24" viewBox="0 0 44 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h38M32 4l8 8-8 8" /></svg>
-              </div>
-              <div className="sk-card">
-                <p className="sk-card-top"><span>The skill</span><code className="fig">{command}</code></p>
-                <h3>{SKILL_NAME}</h3>
-                <dl>
-                  <div>
-                    <dt>What it does</dt>
-                    <dd>{s.prompt}</dd>
-                  </div>
-                  <div>
-                    <dt>What it checks before showing a result</dt>
-                    <dd>
-                      <ul>{checkNames.map((c) => <li key={c}>{c}</li>)}</ul>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>What it will cost</dt>
-                    <dd><b className="fig">{span(cost, credits)} credits</b>, from your {cost.n} runs</dd>
-                  </div>
-                </dl>
-              </div>
+            <summary><strong>Where the idea came from</strong><span>One pricing prompt, {first.length} paid runs, different answers</span></summary>
+            <div className="sk-runs">
+              <h3>I typed this {first.length} times</h3>
+              <p className="sk-prompt">&ldquo;{s.prompt}&rdquo;</p>
+              <ol>
+                {first.map((x) => (
+                  <li key={x.runId}>
+                    <span>Run {x.runId}</span>
+                    <span className="sk-when">{x.when}</span>
+                    <b className="fig">{credits(x.credits)} credits</b>
+                  </li>
+                ))}
+              </ol>
+              {d && (
+                <p className="sk-diff">
+                  The answers disagreed once: <b>{d.plan}</b> came back at {d.values.map((v) => usd(v.value)).join(", ")} a month. That&apos;s why the skill carries checks.
+                </p>
+              )}
             </div>
-            <details className="fold sk-fold">
-              <summary>The skill file itself, in Markdown</summary>
-              <pre className="demo-file sk-raw">{file}</pre>
-            </details>
           </details>
           <details className="rfold sum-limits">
             <summary><strong>What this prototype doesn&apos;t show</strong><span>Limits</span></summary>
             <ul>
-              <li>The skill is written by plain code from the {sessions.length} saved outputs, with no model in the loop.</li>
-              <li>It does not hook into Perplexity&apos;s product. The offer, the build and the command are my proposal.</li>
-              <li>Still open: where the offer appears in the product, a second example with real inputs, and corrections saved as rules.</li>
+              <li>The skill is written and run on Perplexity&apos;s Agent API, not inside Computer. The offer, the sidebar and the slash command are my proposal.</li>
+              <li>The two sessions were recorded with my extension in a test browser. Real users repeat tasks less neatly.</li>
+              <li>One recorded run is shown. Answers vary between runs, and I haven&apos;t checked the prices by hand.</li>
+              <li>Runs sometimes cite sources as numbered markers that don&apos;t map to pages, so I list the pages each run read instead.</li>
+              <li>Not yet tested with Perplexity users.</li>
             </ul>
           </details>
         </div>

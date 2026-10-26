@@ -52,13 +52,13 @@ export default function Overview() {
         />
       </section>
 
-      <section className="ov-film" aria-label="Both prototypes in 37 seconds">
+      <section className="ov-film" aria-label="Both prototypes in 43 seconds">
         <figure>
           <video controls playsInline preload="metadata" poster="/video/run-receipt-overview.jpg" width={1920} height={1080}>
             <source src="/video/run-receipt-overview.mp4" type="video/mp4" />
             Your browser can&apos;t play this video. <a href="/video/run-receipt-overview.mp4">Download it</a>.
           </video>
-          <figcaption>37 seconds · both prototypes, replaying my recorded runs · no speech, so it works with the sound off · soundtrack made for this film</figcaption>
+          <figcaption>43 seconds · two personas, both prototypes · Run Receipt replays my recorded runs, Session to Skill shows the real skill and its Perplexity answer · no speech, so it works with the sound off · soundtrack made for this film</figcaption>
         </figure>
       </section>
 
@@ -90,7 +90,7 @@ export default function Overview() {
           <PersonaLink href="/skill" tone="sk" icon="repeat" name="The repeat-task user"
             line="Runs the same job again and again: a weekly report, a price check."
             pain={{ icon: "receipt", value: "3×", label: "one prompt, word for word, in a day of my sessions, paid for each time" }}
-            proto="Session to Skill" protoLine="Do a task three times, get asked once, then call it with a slash command."
+            proto="Session to Skill" protoLine="Price two apps, then two more: you get asked once, and the method becomes a skill that runs on any app."
             ev={{ cls: "hyp", text: "Seen in my sessions, to test" }} />
         </div>
       </section>
@@ -135,7 +135,8 @@ export default function Overview() {
           <summary><strong>What&apos;s real and what&apos;s simulated</strong><span>Read before you quote a number</span></summary>
           <ul>
             <li><b>Real:</b> the credits, times and results of {h.runs} runs on my own account, {PROTOCOL.period}, and the review counts and quotes from the dashboard ({research.corpus.from} to {research.corpus.to}).</li>
-            <li><b>Simulated:</b> both prototypes replay recorded runs and do not connect to Perplexity. The test files are made up. The skill offer, the one-click build and the slash command are my proposal.</li>
+            <li><b>Real on Perplexity:</b> Session to Skill&apos;s skill was written from two recorded sessions and run on Perplexity&apos;s Agent API.</li>
+            <li><b>Simulated:</b> Run Receipt replays recorded runs and does not connect to Perplexity. Its test files are made up. The skill offer inside Computer, the sidebar and the slash command are my proposal.</li>
             <li><b>Not yet done:</b> testing either prototype with Perplexity users.</li>
           </ul>
         </details>

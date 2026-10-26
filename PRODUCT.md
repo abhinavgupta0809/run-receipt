@@ -41,7 +41,7 @@ Sent by Abhinav Gupta with applications for PM roles at Perplexity (Growth, AI C
 ## Evidence on Hand
 
 - `data/runs.json` (27 runs), `data/recordings*.json`, `data/gate.json`, the made-up bank file.
-- Six cropped screenshots in `public/evidence/`. Full set in `~/Desktop/Perplexity Research/Run Test Kit/outputs/`.
+- Six cropped screenshots in `public/evidence/`. Full set in `~/Desktop/Company prep/Perplexity/Product Manager/Perplexity Research/Run Test Kit/outputs/`.
 - No screenshot of the open Hybrid spreadsheet exists; the blank cells are drawn from the recorded rows.
 
 ## Product Principles

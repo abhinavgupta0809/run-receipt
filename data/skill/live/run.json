@@ -1,0 +1,58 @@
+{
+  "question": "Pricing analysis for Linear, Figma and Slack: compare their paid plans for one user, monthly vs yearly billing.",
+  "ranOn": "2026-10-25",
+  "seconds": 27,
+  "id": "resp_6ab65d11-a52a-4ba1-9830-3c8a2358e1ce",
+  "status": "completed",
+  "model": "openai/gpt-6-luna",
+  "text": "**For one user, the cheapest paid option depends on the product and, for Figma, the seat type.** Prices below are standard USD rates, excluding temporary promotions. Linear’s official pricing page showed annual-billing equivalents but did not state monthly rates; Figma’s official page showed its seat prices but did not clearly distinguish Professional monthly from annual prices in the fetched text. [web:1][web:2][web:3]\n\n| Product | Paid plan | Seat type | Monthly billing | Annual billing (monthly equivalent) |\n|---|---|---|---:|---:|\n| Linear | Basic | User | Not stated on the official pricing page | $10/user/month ($120/year) [web:1] |\n| Linear | Business | User | Not stated on the official pricing page | $16/user/month ($192/year) [web:1] |\n| Linear | Enterprise | User | Custom | Custom; annual billing only [web:1] |\n| Figma | Professional | Full | $20/seat/month | $16/seat/month ($192/year) [web:2] |\n| Figma | Professional | Dev | $15/seat/month | $12/seat/month ($144/year) [web:2] |\n| Figma | Professional | Collab | $5/seat/month | $3/seat/month ($36/year) [web:2] |\n| Figma | Organization | Full | Annual billing only | $55/seat/month ($660/year) [web:2] |\n| Figma | Organization | Dev | Annual billing only | $25/seat/month ($300/year) [web:2] |\n| Figma | Organization | Collab | Annual billing only | $5/seat/month ($60/year) [web:2] |\n| Figma | Enterprise | Full | Annual billing only | $90/seat/month ($1,080/year) [web:2] |\n| Figma | Enterprise | Dev | Annual billing only | $35/seat/month ($420/year) [web:2] |\n| Figma | Enterprise | Collab | Annual billing only | $5/seat/month ($60/year) [web:2] |\n| Slack | Pro | User | $8.75/user/month | $7.25/user/month ($87/year) [web:3] |\n| Slack | Business+ | User | $18/user/month | $15/user/month ($180/year) [web:3] |\n| Slack | Enterprise+ | User | Contact sales | Contact sales; public price not listed [web:3] |\n\n**Quick comparison:** Slack Pro is $1.50 less per month on annual billing than monthly billing; Business+ is $3 less. Figma’s Professional seat rates also vary by seat type, and Organization and Enterprise are annual-only. Linear’s public page lists Basic and Business annual equivalents; it does not provide monthly-billing prices there. [web:1][web:2][web:3]",
+  "citations": [],
+  "searched": [
+    {
+      "url": "https://linear.app/pricing"
+    },
+    {
+      "url": "https://costbench.com/software/developer-tools/linear/"
+    },
+    {
+      "url": "https://workmanagementhub.com/linear-pricing-2026/"
+    },
+    {
+      "url": "https://automationatlas.io/tools/linear/"
+    },
+    {
+      "url": "https://omidsaffari.com/blog/linear-pricing"
+    },
+    {
+      "url": "https://www.figma.com/pricing/"
+    },
+    {
+      "url": "https://www.figma.com/pricing-faq/"
+    },
+    {
+      "url": "https://www.lilachbullock.com/figma-pricing/"
+    },
+    {
+      "url": "https://costbench.com/software/ai-design-tools/figma-ai/"
+    },
+    {
+      "url": "https://frontdeskreview.com/software/design-tools/figma/"
+    },
+    {
+      "url": "https://slack.com/pricing"
+    },
+    {
+      "url": "https://slack.com/intl/en-gb/pricing"
+    },
+    {
+      "url": "https://slack.com/pricing/paid-vs-free"
+    },
+    {
+      "url": "https://slack.com/aff"
+    },
+    {
+      "url": "https://slack.com/intl/ja-jp/pricing"
+    }
+  ],
+  "costUsd": 0.04485
+}

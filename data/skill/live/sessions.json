@@ -1,0 +1,39 @@
+[
+  {
+    "goal": "Pricing analysis: compare Notion and Obsidian paid plans, monthly vs yearly billing",
+    "recordedOn": "2026-10-25",
+    "events": 11,
+    "screenshots": 6,
+    "lines": [
+      "1. [00:01] open page \"DuckDuckGo HTML: Private Search Without JavaScript\" https://html.duckduckgo.com/html/",
+      "2. [00:03] submit field \"q\" with \"notion pricing plans\"",
+      "3. [00:03] click input \"Search\"",
+      "4. [00:04] open page \"notion pricing plans at DuckDuckGo\" https://html.duckduckgo.com/html/",
+      "5. [00:07] open page \"Notion Pricing Plans: Free, Plus, Business, & Enterprise.\" https://www.notion.com/pricing",
+      "6. [00:17] click label \"Pay monthly\"",
+      "7. [00:17] set field \"Pay monthly\" to \"true\"",
+      "8. [00:22] open page \"Pricing - Obsidian\" https://obsidian.md/pricing",
+      "9. [00:35] click tab \"Monthly\""
+    ]
+  },
+  {
+    "goal": "Pricing analysis: compare Todoist and Bear paid plans, monthly vs yearly billing",
+    "recordedOn": "2026-10-25",
+    "events": 14,
+    "screenshots": 7,
+    "lines": [
+      "1. [00:01] open page \"DuckDuckGo HTML: Private Search Without JavaScript\" https://html.duckduckgo.com/html/",
+      "2. [00:03] submit field \"q\" with \"todoist pricing plans\"",
+      "3. [00:03] click input \"Search\"",
+      "4. [00:04] open page \"todoist pricing plans at DuckDuckGo\" https://html.duckduckgo.com/html/",
+      "5. [00:07] open page \"Pricing | Todoist\" https://www.todoist.com/pricing",
+      "6. [00:21] click span \"Monthly\"",
+      "7. [00:27] open page \"DuckDuckGo HTML: Private Search Without JavaScript\" https://html.duckduckgo.com/html/",
+      "8. [00:29] submit field \"q\" with \"bear app pro price\"",
+      "9. [00:29] click input \"Search\"",
+      "10. [00:29] open page \"bear app pro price at DuckDuckGo\" https://html.duckduckgo.com/html/",
+      "11. [00:32] click a \"Features and price of Bear Pro\" -> https://bear.app/faq/features-and-price-of-bear-pro/",
+      "12. [00:33] open page \"Features and price of Bear Pro\" https://bear.app/faq/features-and-price-of-bear-pro/"
+    ]
+  }
+]
