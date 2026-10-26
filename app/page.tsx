@@ -8,7 +8,7 @@ import { PersonaLink, StatBand, WhoWhatWhy } from "./persona";
 
 type Research = {
   dashboardUrl: string | null;
-  corpus: { reviews: number; from: string; to: string };
+  corpus: { reviews: number; from: string; to: string; iosTo: string };
   labelCheck: { matches: number; n: number };
   creditsRunOut: { reviews: number; lowStar: number };
 };
@@ -59,7 +59,7 @@ export default function Overview() {
         {research.dashboardUrl && (
           <a className="ov-data" href={research.dashboardUrl} target="_blank" rel="noopener" aria-label={`Real customer data, analyzed: open the Perplexity app reviews dashboard (${n(research.corpus.reviews)} reviews)`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/img/reviews-dashboard.webp" width={1080} height={885} alt={`The Perplexity app reviews dashboard: ${n(research.corpus.reviews)} public reviews, average 4.20 stars, and a chart of where the signal is.`} />
+            <img src="/img/reviews-dashboard.webp" width={1080} height={885} alt={`The Perplexity app reviews dashboard: ${n(research.corpus.reviews)} public reviews and a chart of where the signal is.`} />
             <span className="ov-data-cap"><strong>Real customer data, analyzed</strong><span>{n(research.corpus.reviews)} public app reviews, labelled and charted · open the dashboard ↗</span></span>
           </a>
         )}
@@ -137,7 +137,7 @@ export default function Overview() {
         <details className="rfold">
           <summary><strong>What&apos;s real and what&apos;s simulated</strong><span>Read before you quote a number</span></summary>
           <ul>
-            <li><b>Real:</b> the credits, times and results of {h.runs} runs on my own account, {PROTOCOL.period}, and the review counts and quotes from the dashboard ({research.corpus.from} to {research.corpus.to}).</li>
+            <li><b>Real:</b> the credits, times and results of {h.runs} runs on my own account, {PROTOCOL.period}, and the review counts and quotes from the dashboard ({research.corpus.from} to {research.corpus.to}{research.corpus.iosTo !== research.corpus.to ? `; App Store reviews end ${research.corpus.iosTo}` : ""}).</li>
             <li><b>Real on Perplexity:</b> Session to Skill&apos;s skill was written from two recorded sessions and run on Perplexity&apos;s Agent API.</li>
             <li><b>Simulated:</b> Run Receipt replays recorded runs and does not connect to Perplexity. Its test files are made up. The skill offer inside Computer and the sidebar are my proposal.</li>
             <li><b>Not yet done:</b> testing either prototype with Perplexity users.</li>

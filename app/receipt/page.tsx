@@ -15,7 +15,7 @@ type Cluster = { title: string; reviews: number; lowStar: number; android: numbe
 type Research = {
   generated: string;
   dashboardUrl: string | null;
-  corpus: { reviews: number; android: number; ios: number; from: string; to: string; substantive: number; stores: string };
+  corpus: { reviews: number; android: number; ios: number; from: string; to: string; iosTo: string; substantive: number; stores: string };
   labelCheck: { matches: number; n: number };
   money: { reviews: number; lowStar: number };
   creditsRunOut: Cluster;
@@ -197,7 +197,7 @@ export default function ReceiptPage() {
                   ))}
                 </div>
                 <p className="sum-source">
-                  From {n(research.corpus.reviews)} {research.corpus.stores} reviews, {research.corpus.from} to {research.corpus.to}. {n(research.corpus.substantive)} say something specific. {n(research.money.reviews)} are complaints and requests about credits, limits, pricing or billing. Public reviews, not interviews. Labels come from an LLM, checked against {research.labelCheck.n} hand-labelled reviews: {research.labelCheck.matches} matched. A keyword search of these reviews found none about the credit meter reading low. That finding comes from my own runs.
+                  From {n(research.corpus.reviews)} {research.corpus.stores} reviews, {research.corpus.from} to {research.corpus.to}{research.corpus.iosTo !== research.corpus.to ? ` (App Store reviews end ${research.corpus.iosTo})` : ""}. {n(research.corpus.substantive)} say something specific. {n(research.money.reviews)} are complaints and requests about credits, limits, pricing or billing. Public reviews, not interviews. Labels come from an LLM, checked against {research.labelCheck.n} hand-labelled reviews: {research.labelCheck.matches} matched. A keyword search of these reviews found none about the credit meter reading low. That finding comes from my own runs.
                 </p>
               </div>
               <aside className={`sum-slot ${research.dashboardUrl ? "live" : ""}`} aria-label="Reviews dashboard">
