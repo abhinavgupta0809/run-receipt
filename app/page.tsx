@@ -36,7 +36,7 @@ export default function Overview() {
         <div>
           <p className="tp-independent">Two prototypes for Perplexity Computer · independent, not made by or with Perplexity</p>
           <h1>Same prompt, three runs, <em>three prices.</em></h1>
-          <p className="sum-lede">I measured {h.runs} Computer runs on my own account. I found two gaps: you can&apos;t see what a run will cost before you send it, and a task you repeat starts from scratch every time. Here&apos;s what I&apos;d build for each.</p>
+          <p className="sum-lede">I measured {h.runs} Computer runs on my own account. I found two gaps: you can&apos;t see what a run will cost before you send it, and a task you repeat redoes every step unless you&apos;ve already written a skill for it. Here&apos;s what I&apos;d build for each.</p>
         </div>
         <figure className="ov-hero-film">
           <video controls playsInline preload="metadata" poster="/video/run-receipt-overview.jpg" width={1920} height={1080}>
@@ -126,7 +126,7 @@ export default function Overview() {
       <section aria-labelledby="about-h" className="ov-about">
         <div className="ov-about-copy">
           <h2 id="about-h" className="sum-h2">Why listen to me</h2>
-          <p className="ov-lede">I didn&apos;t guess. I ran the tasks on my own account, logged every credit, and graded results against files with a known answer.</p>
+          <p className="ov-lede">I measured before I proposed anything. I ran the tasks on my own account, logged every credit, and graded results against files with a known answer.</p>
           <p><strong>Abhinav Gupta.</strong> MS Product Management, Carnegie Mellon (Tepper), Dec 2026. Six years in product and growth at Flipkart, ShareChat, Meesho and Tata 1mg.</p>
           <p><strong>Graduating December 2026 and looking for AI product roles.</strong></p>
           <p className="ov-buttons"><a className="btn" href={PORTFOLIO} target="_blank" rel="noopener">Portfolio</a><a className="btn btn-quiet" href={RESUME} target="_blank" rel="noopener">Résumé</a><a className="btn btn-quiet" href={LINKEDIN} target="_blank" rel="noopener">LinkedIn</a><a className="btn btn-quiet" href={GITHUB} target="_blank" rel="noopener">GitHub</a><Link className="btn btn-quiet" href="/evidence">Evidence</Link></p>

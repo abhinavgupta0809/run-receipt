@@ -90,7 +90,7 @@ export default function ReceiptPage() {
           <li className="hybrid"><b>{t.localRunsNotFullMarks} of {t.localRuns}</b><span>runs where Hybrid mode used my Mac&apos;s local model came back wrong or incomplete</span></li>
         </ul>
         <p className="sum-note tp-today">
-          <b>What Computer has today.</b> Plan Previews show the plan for long tasks, not a price, and Perplexity&apos;s own Computer guide says &ldquo;There is no built-in pre-run credit estimator today.&rdquo; The running credit total is there while a task works, but in my runs it read low at Finished {h.panelLow} of {h.panelReadings} times.
+          <b>What Computer has today.</b> Plan Previews show the plan for long tasks, not a price for your prompt. Perplexity&apos;s <a href="https://www.perplexity.ai/help-center/en/articles/13838041-how-credits-work-on-perplexity" target="_blank" rel="noopener">credits guide</a> lists typical ranges by task type (350 to 950 credits for a multi-step research report), and its <a href="https://www.perplexity.ai/hub/workshops/introducing-perplexity-computer" target="_blank" rel="noopener">Computer workshop page</a> says &ldquo;There is no built-in pre-run credit estimator today.&rdquo; The running credit total is there while a task works, but in my runs it read low at Finished {h.panelLow} of {h.panelReadings} times.
         </p>
         <p className="tp-quote">
           <span className="tp-tag">{n(research.creditsRunOut.reviews)} reviews about running out of credits</span>

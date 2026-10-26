@@ -33,3 +33,11 @@ export function about(x: number): number {
   const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(x)) - 1));
   return Math.round(x / p) * p;
 }
+
+// People who must trigger the offer for the holdout to detect a retention gap of gapPts, two-sided 5% test
+// at 80% power, assuming `retained` of them are still subscribed at the end. Normal approximation.
+export function holdoutSize(gapPts: number, holdoutShare: number, retained = 0.9): number {
+  const z = 1.96 + 0.84;
+  const variance = retained * (1 - retained) * (1 / holdoutShare + 1 / (1 - holdoutShare));
+  return Math.ceil((z * z * variance) / Math.pow(gapPts / 100, 2));
+}

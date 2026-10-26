@@ -6,7 +6,7 @@ import { range, type Run } from "@/lib/estimate.ts";
 import { day, friendly, sessionLabel } from "@/lib/livedemo.ts";
 import type { SkillPlan } from "@/lib/skillwriter.ts";
 import type { Citation } from "@/lib/perplexity.ts";
-import { about, LEVELS, scenario, type Case } from "@/lib/skillcase.ts";
+import { about, holdoutSize, LEVELS, scenario, type Case } from "@/lib/skillcase.ts";
 import { credits } from "../format";
 import DeviceToggle from "../device";
 import { Persona } from "../persona";
@@ -25,9 +25,9 @@ const num = (n: number) => n.toLocaleString("en-US");
 const host = (u: string) => new URL(u).hostname.replace(/^www\./, "");
 // Each metric with its formula, population and period, and the decision it controls.
 const METRICS = [
-  { name: "Habitual paying Computer users", kind: "Company north star", formula: "Paying users with a kept task in 3 of the last 4 weeks ÷ all paying Computer users", who: "All paying Computer users, weekly", decision: "Context for the feature: if people who save skills aren't more habitual than the holdout after 8 weeks, stop expanding Session to Skill." },
+  { name: "Habitual paying Computer users", kind: "Company north star", formula: "Paying users with a kept task in 3 of the last 4 weeks ÷ all paying Computer users", who: "All paying Computer users, weekly", decision: "Context for the feature: if people offered a skill aren't more habitual than the holdout after its 90 days, stop expanding Session to Skill." },
   { name: "Skills run again", kind: "Feature north star", formula: "Skills saved from an offer run 2+ times in 14 days ÷ skills saved from an offer", who: "Weekly cohorts of saved skills", decision: "Under the bar for 4 cohorts in a row: change when the offer appears before building anything else." },
-  { name: "Failed check shown without a flag", kind: "Guardrail", formula: "Skill answers with a failed check and no flag ÷ skill answers", who: "Every skill run, daily", decision: "Any occurrence stops the rollout until the flag is fixed." },
+  { name: "Failed check shown without a flag", kind: "Guardrail", formula: "Graded skill answers with a failed check and no flag ÷ graded skill answers", who: "Weekly random sample of skill runs, graded by code and a reviewer", decision: "Above 1% in any week: pause the rollout until the flag is fixed." },
   { name: "Skill answers redone", kind: "Guardrail", formula: "Skill runs retried or redone by prompt within 24 hours ÷ skill runs, compared with the same task typed as a prompt", who: "Skill users, weekly, by task type", decision: "Worse than prompts for 2 weeks: pause offers for that task type." },
   { name: "Credits per skill run", kind: "Guardrail", formula: "Median credits per skill run ÷ median credits of the sessions the skill came from", who: "Skill runs, weekly", decision: "Above 1: fix the skill writer before widening the offer." },
   { name: "Offers dismissed", kind: "Guardrail", formula: "Offers dismissed or turned off ÷ offers shown", who: "Users shown an offer, weekly", decision: "Above the bar: raise the trigger from two sessions to three." },
@@ -107,7 +107,7 @@ export default function SkillPage() {
           <span>In my cost test I ran one pricing prompt {first.length} times, and each run redid every step from scratch. When I checked on Oct 2 to 4, 2026, the session menu had no save-as-skill option.</span>
         </p>
         <p className="sum-note tp-today">
-          <b>What Computer has today.</b> You can make a skill by describing it to Computer (&ldquo;Create with Computer&rdquo;) or by uploading a file. Both start after you&apos;ve decided a task is worth saving, and neither uses the sessions you already ran. Brain (July 2026) remembers context across sessions; Session to Skill is different: it turns a repeated method into a named skill you can read, check and run on new inputs.
+          <b>What Computer has today.</b> You can make a skill by describing it to Computer (&ldquo;Create with Computer&rdquo;) or by uploading a file. Both start after you&apos;ve decided a task is worth saving, and neither uses the sessions you already ran. <a href="https://www.perplexity.ai/help-center/en/articles/19700001-what-is-brain" target="_blank" rel="noopener">Brain</a> (a research preview on Max) learns from past sessions, and Perplexity says skills that improve themselves may come later, shown to you for review first. Session to Skill is the step in between: it turns a repeated method into a named skill you can read, check and run on new inputs.
         </p>
       </section>
 
@@ -161,7 +161,7 @@ export default function SkillPage() {
           <AnswerView text={run.text} />
           <p className="lv-sources"><b>Official pages it read:</b> {official.map((c, i) => <span key={c.url}>{i > 0 && " · "}<a href={c.url} target="_blank" rel="noreferrer">{host(c.url)}{new URL(c.url).pathname.replace(/\/$/, "")}</a></span>)}</p>
           {/* Checked by hand against figma.com, linear.app and slack.com pricing pages on Oct 26, 2026, for this recorded run only. */}
-          <p className="lv-note"><b>How it did against its own skill.</b> Checked against the vendors&apos; pricing pages on Oct 26, 2026: Figma, Linear and Slack Pro and Business+ match, and it was right that Linear publishes no monthly price. It missed one: Slack lists Enterprise+ at $45 per user a month, billed annually. It also skipped three things its skill asks for (the yearly-savings column, a source link on each row, and the date checked) without flagging them. That&apos;s the failure the &ldquo;never&rdquo; guardrail below is there to catch.</p>
+          <p className="lv-note"><b>How it did against its own skill.</b> Checked against the vendors&apos; pricing pages on Oct 26, 2026: every Figma and Linear price matches, as do Slack Pro and Business+, and it was right that Linear&apos;s page shows no monthly price. It missed one: Slack lists Enterprise+ at $45 per user a month, billed annually. It also skipped three things its skill asks for (a yearly-savings percentage, a source link on each row, and the date checked) without flagging them. That&apos;s the failure the first guardrail below is there to catch.</p>
         </div>
 
         <LiveRun example={EXAMPLE} skill={name} />
@@ -193,7 +193,7 @@ export default function SkillPage() {
           <article className="bm-card">
             <span className="bm-label">Guardrails</span>
             <ul className="bm-list">
-              <li><span>A failed check shown without a flag</span><span className="th">never</span></li>
+              <li><span>A failed check shown without a flag, in a weekly graded sample</span><span className="th">under 1%</span></li>
               <li><span>Skill answers redone within a day, vs the same task typed as a prompt</span><span className="th">no worse</span></li>
               <li><span>Credits per skill run, vs the sessions it came from</span><span className="th">no higher</span></li>
               <li><span>Offers dismissed ÷ offers shown</span><span className="th">set after baseline</span></li>
@@ -203,7 +203,7 @@ export default function SkillPage() {
             <span className="bm-label">Supporting</span>
             <ul className="bm-list">
               <li><span>Offers accepted ÷ offers shown</span><span className="th">set after baseline</span></li>
-              <li><span>Skill runs on apps not in the recordings ÷ all skill runs</span><span className="th">set after baseline</span></li>
+              <li><span>Skill runs on inputs not in the source sessions ÷ all skill runs</span><span className="th">set after baseline</span></li>
               <li><span>Skills edited before saving ÷ skills saved</span><span className="th">set after baseline</span></li>
             </ul>
           </article>
@@ -234,7 +234,7 @@ export default function SkillPage() {
               <ul>
                 <li><b>{num(Math.round(x.skillUsers))}</b> people save a skill</li>
                 <li><b>{num(Math.round(x.retainedMonths))}</b> subscriber-months kept</li>
-                <li>Pays back each {usd(costUnit, 0)} of build cost with about <b>{num(about(x.breakEvenUsers))}</b> paying users for a year</li>
+                <li>Each {usd(costUnit, 0)} spent building it takes about <b>{num(about(x.breakEvenUsers))}</b> paying users a year to earn back</li>
               </ul>
             </article>
           ))}
@@ -242,7 +242,7 @@ export default function SkillPage() {
         <div className="bc-notes">
           <p><b>Cost.</b> Writing a skill cost {usd(written.costUsd, 3)} in one measured Agent API call, so writing every skill in the base case costs about {usd(Math.round(base.writeCostUsd), 0)}. Skill runs replace sessions people already pay for (my assumption). On {maxPlan.name} at {usd(maxPlan.usdPerMonth, 0)} a month, each kept subscriber-month is worth {Math.round(maxPlan.usdPerMonth / price)} times as much.</p>
           <p><b>The case against.</b> The direct value is small unless saving a skill changes who cancels. That churn effect is the assumption the whole case rests on, and nobody has measured it.</p>
-          <p><b>How to prove it.</b> Among people who trigger the offer, hold it back from {Math.round(bc.holdoutShare * 100)}% at random and compare who&apos;s still subscribed after {bc.holdoutDays} days. A gap of {bc.rolloutGapPts} points or more: roll out wider. Between zero and {bc.rolloutGapPts}: keep it, and test the trigger and the copy. No gap: stop at the first version.</p>
+          <p><b>How to prove it.</b> Among people who trigger the offer, hold it back from {Math.round(bc.holdoutShare * 100)}% at random and compare who&apos;s still subscribed after {bc.holdoutDays} days. Size it first: seeing a {bc.rolloutGapPts}-point gap takes roughly {num(about(holdoutSize(bc.rolloutGapPts, bc.holdoutShare)))} people who trigger the offer (my estimate, assuming 90% still subscribed), so widen the holdout if fewer qualify. A gap of {bc.rolloutGapPts} points or more: roll out wider. Between zero and {bc.rolloutGapPts}: keep it, and test the trigger and the copy. No gap: stop at the first version.</p>
           <p><b>Kill criteria.</b> Stop investing past the first version if skills run again stays under its bar for four weekly cohorts in a row, or the holdout shows no retention gap after {bc.holdoutDays} days.</p>
         </div>
         <details className="rfold">
@@ -252,7 +252,7 @@ export default function SkillPage() {
               <thead><tr><th scope="col">Assumption</th><th scope="col">Low</th><th scope="col">Base</th><th scope="col">High</th><th scope="col">What backs it</th></tr></thead>
               <tbody>
                 {bc.inputs.map((i) => {
-                  const f = (v: number) => (i.key === "churnCutPts" ? `${v} pts` : `${Math.round(v * 100)}%`);
+                  const f = (v: number) => (i.key === "churnCutPts" ? `${v} pt${v === 1 ? "" : "s"}` : `${Math.round(v * 100)}%`);
                   return <tr key={i.key}><td>{i.label}</td><td>{f(i.low)}</td><td>{f(i.base)}</td><td>{f(i.high)}</td><td>{i.evidence}</td></tr>;
                 })}
               </tbody>
@@ -329,7 +329,7 @@ export default function SkillPage() {
             <ul>
               <li>The skill is written and run on Perplexity&apos;s Agent API, not inside Computer. The offer and the sidebar are my proposal. Computer already runs skills when they&apos;re relevant, and plugins from its / menu.</li>
               <li>The two sessions were recorded with my extension in a test browser. Real users repeat tasks less neatly.</li>
-              <li>One recorded run is shown. Answers vary between runs, and I haven&apos;t checked the prices by hand.</li>
+              <li>One recorded run is shown, and its prices were checked against the vendors&apos; pages on Oct 26, 2026. Answers vary between runs, and the others aren&apos;t checked.</li>
               <li>Runs sometimes cite sources as numbered markers that don&apos;t map to pages, so I list the pages each run read instead.</li>
               <li>Not yet tested with Perplexity users.</li>
             </ul>

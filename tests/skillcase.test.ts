@@ -33,3 +33,11 @@ test("about rounds to two significant figures", () => {
   assert.equal(about(11641), 12000);
   assert.equal(about(90), 90);
 });
+
+test("holdoutSize: a 0.5-point gap with a 10% holdout needs about 310,000 people", async () => {
+  const { holdoutSize } = await import("../lib/skillcase.ts");
+  // 2.8² × 0.09 × (10 + 1.111) ÷ 0.005² = 313,600
+  assert.equal(holdoutSize(0.5, 0.1), 313600);
+  assert.equal(about(holdoutSize(0.5, 0.1)), 310000);
+  assert.ok(holdoutSize(0.5, 0.5) < holdoutSize(0.5, 0.1));
+});
