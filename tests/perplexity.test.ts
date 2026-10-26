@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { crc32 } from "node:zlib";
-import { skillName, skillZip, toAnswer } from "../lib/perplexity.ts";
+import { integrationHeaders, skillName, skillZip, toAnswer } from "../lib/perplexity.ts";
 
 test("toAnswer splits what the answer cites from what the run searched, one entry per URL", () => {
   const a = toAnswer({
@@ -79,4 +79,10 @@ test("skillZip writes one stored SKILL.md under a top-level folder", () => {
   const end = zip.length - 22;
   assert.equal(zip.readUInt32LE(end), 0x06054b50);
   assert.equal(zip.readUInt32LE(zip.readUInt32LE(end + 16)), 0x02014b50);
+});
+
+test("integrationHeaders attributes only the public Perplexity API host", () => {
+  assert.deepEqual(integrationHeaders("https://api.perplexity.ai"), { "X-Pplx-Integration": "run-receipt" });
+  assert.deepEqual(integrationHeaders("https://api.perplexity.ai.example.com"), {});
+  assert.deepEqual(integrationHeaders("https://proxy.example.com/api.perplexity.ai"), {});
 });
