@@ -23,17 +23,19 @@ const read = (name: string) => readFileSync(path.join(process.cwd(), "data", nam
 const usd = (n: number, digits = 2) => `$${n.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits }).replace(/\.00$/, "")}`;
 const num = (n: number) => n.toLocaleString("en-US");
 const host = (u: string) => new URL(u).hostname.replace(/^www\./, "");
+// Starting bars are my picks before any data; each gets reset after the first month of real numbers.
+const RERUN_BAR_PCT = 30;
 // Each metric with its formula, population and period, and the decision it controls.
 const METRICS = [
   { name: "Habitual paying Computer users", kind: "Company north star", formula: "Paying users with a kept task in 3 of the last 4 weeks ÷ all paying Computer users", who: "All paying Computer users, weekly", decision: "Context for the feature: if people offered a skill aren't more habitual than the holdout after its 90 days, stop expanding Session to Skill." },
-  { name: "Skills run again", kind: "Feature north star", formula: "Skills saved from an offer run 2+ times in 14 days ÷ skills saved from an offer", who: "Weekly cohorts of saved skills", decision: "Under the bar for 4 cohorts in a row: change when the offer appears before building anything else." },
+  { name: "Skills run again", kind: "Feature north star", formula: "Skills saved from an offer run 2+ times in 14 days ÷ skills saved from an offer", who: "Weekly cohorts of saved skills", decision: `Under ${RERUN_BAR_PCT}% (my starting bar) for 4 cohorts in a row: change when the offer appears before building anything else.` },
   { name: "Failed check shown without a flag", kind: "Guardrail", formula: "Graded skill answers with a failed check and no flag ÷ graded skill answers", who: "Weekly random sample of skill runs, graded by code and a reviewer", decision: "Above 1% in any week: pause the rollout until the flag is fixed." },
   { name: "Skill answers redone", kind: "Guardrail", formula: "Skill runs retried or redone by prompt within 24 hours ÷ skill runs, compared with the same task typed as a prompt", who: "Skill users, weekly, by task type", decision: "Worse than prompts for 2 weeks: pause offers for that task type." },
   { name: "Credits per skill run", kind: "Guardrail", formula: "Median credits per skill run ÷ median credits of the sessions the skill came from", who: "Skill runs, weekly", decision: "Above 1: fix the skill writer before widening the offer." },
-  { name: "Offers dismissed", kind: "Guardrail", formula: "Offers dismissed or turned off ÷ offers shown", who: "Users shown an offer, weekly", decision: "Above the bar: raise the trigger from two sessions to three." },
+  { name: "Offers dismissed", kind: "Guardrail", formula: "Offers dismissed or turned off ÷ offers shown", who: "Users shown an offer, weekly", decision: "Above 50% (my starting bar): raise the trigger from two sessions to three." },
   { name: "Offers accepted", kind: "Supporting", formula: "Offers accepted ÷ offers shown", who: "Users shown an offer, weekly", decision: "Low acceptance but high reuse: work on the offer's copy and timing, not the skill." },
-  { name: "Runs on new inputs", kind: "Supporting", formula: "Skill runs with inputs not in the source sessions ÷ skill runs", who: "Skill runs, weekly", decision: "Near zero: skills behave like saved prompts, so drop the model-written generalizing step." },
-  { name: "Skills edited before saving", kind: "Supporting", formula: "Skills edited in the review step ÷ skills saved", who: "Skills saved, weekly", decision: "High: the writer misses steps; improve it before widening the trigger." },
+  { name: "Runs on new inputs", kind: "Supporting", formula: "Skill runs with inputs not in the source sessions ÷ skill runs", who: "Skill runs, weekly", decision: "Under 10%: skills behave like saved prompts, so drop the model-written generalizing step." },
+  { name: "Skills edited before saving", kind: "Supporting", formula: "Skills edited in the review step ÷ skills saved", who: "Skills saved, weekly", decision: "Over 50%: the writer misses steps; improve it before widening the trigger." },
 ];
 const EXAMPLE = "Pricing analysis for Canva, Miro and Loom: compare their paid plans for one user, monthly vs yearly billing.";
 
@@ -66,6 +68,7 @@ export default function SkillPage() {
   const costUnit = business.costUnitUsd;
   const cases = LEVELS.map((l) => scenario(bc, l, price, written.costUsd, costUnit));
   const base = cases.find((x) => x.level === "base")!;
+  const repeatBase = bc.inputs.find((i) => i.key === "repeatShare")!.base;
 
   // The three Computer runs of one prompt that started the idea.
   const s = JSON.parse(read("skill/sessions.json")) as Sessions;
@@ -90,7 +93,7 @@ export default function SkillPage() {
 
       <section aria-label="Who it's for">
         <Persona tone="sk" icon="repeat" name="The repeat-task user"
-          line="Runs the same kind of job again and again: a price check, a weekly report, a filing."
+          line="Does the same kind of job on new inputs each time: a price check, a vendor comparison, a filing."
           facts={[
             { icon: "repeat", value: String(first.length), label: "runs of one pricing prompt in my cost test, each redoing every step from scratch" },
             { icon: "coins", value: `${credits(cost.min)}–${credits(cost.max)}`, label: "credits paid each time to redo the same steps" },
@@ -107,7 +110,7 @@ export default function SkillPage() {
           <span>In my cost test I ran one pricing prompt {first.length} times, and each run redid every step from scratch. When I checked on Oct 2 to 4, 2026, the session menu had no save-as-skill option.</span>
         </p>
         <p className="sum-note tp-today">
-          <b>What Computer has today.</b> You can make a skill by describing it to Computer (&ldquo;Create with Computer&rdquo;) or by uploading a file. Both start after you&apos;ve decided a task is worth saving, and neither uses the sessions you already ran. <a href="https://www.perplexity.ai/help-center/en/articles/19700001-what-is-brain" target="_blank" rel="noopener">Brain</a> (a research preview on Max) learns from past sessions, and Perplexity says skills that improve themselves may come later, shown to you for review first. Session to Skill is the step in between: it turns a repeated method into a named skill you can read, check and run on new inputs.
+          <b>What Computer has today.</b> You can make a skill by describing it to Computer (&ldquo;Create with Computer&rdquo;) or by uploading a file. Both start after you&apos;ve decided a task is worth saving, and neither uses the sessions you already ran. <a href="https://www.perplexity.ai/changelog/automations-inline-visualizations-and-gpt-6-1-sol" target="_blank" rel="noopener">Automations</a> (Oct 5, 2026) rerun work on a schedule or when something happens in a connected app, and can use skills, but they repeat a task you set up rather than learning one from different sessions. <a href="https://www.perplexity.ai/help-center/en/articles/19700001-what-is-brain" target="_blank" rel="noopener">Brain</a> (a research preview on Max) learns from past sessions, and Perplexity says skills that improve themselves may come later, shown to you for review first. Session to Skill is the step in between: it turns a repeated method into a named skill you can read, check and run on new inputs.
         </p>
       </section>
 
@@ -151,7 +154,7 @@ export default function SkillPage() {
             <span className="lv-n">3</span>
             <h3>Saved and run</h3>
             <p className="lv-big">{run.seconds} s · {usd(run.costUsd, 3)}</p>
-            <p>Saved with Perplexity&apos;s Skills API, then asked about {apps.replace(/, ([^,]+)$/, " and $1")}: apps it never saw. It read {run.searched.length} pages and answered.</p>
+            <p>Saved with Perplexity&apos;s Skills API, then asked about {apps.replace(/, ([^,]+)$/, " and $1")}: apps it never saw. It pulled up {run.searched.length} pages and answered.</p>
           </li>
         </ol>
 
@@ -159,9 +162,9 @@ export default function SkillPage() {
           <p className="lv-meta"><span>Recorded run</span><span>{day(run.ranOn)}</span><span>{run.model} via Perplexity&apos;s Agent API</span></p>
           <p className="lv-q">{run.question}</p>
           <AnswerView text={run.text} />
-          <p className="lv-sources"><b>Official pages it read:</b> {official.map((c, i) => <span key={c.url}>{i > 0 && " · "}<a href={c.url} target="_blank" rel="noreferrer">{host(c.url)}{new URL(c.url).pathname.replace(/\/$/, "")}</a></span>)}</p>
+          <p className="lv-sources"><b>Official pages it found:</b> {official.map((c, i) => <span key={c.url}>{i > 0 && " · "}<a href={c.url} target="_blank" rel="noreferrer">{host(c.url)}{new URL(c.url).pathname.replace(/\/$/, "")}</a></span>)}</p>
           {/* Checked by hand against figma.com, linear.app and slack.com pricing pages on Oct 26, 2026, for this recorded run only. */}
-          <p className="lv-note"><b>How it did against its own skill.</b> Checked against the vendors&apos; pricing pages on Oct 26, 2026: every Figma and Linear price matches, as do Slack Pro and Business+, and it was right that Linear&apos;s page shows no monthly price. It missed one: Slack lists Enterprise+ at $45 per user a month, billed annually. It also skipped three things its skill asks for (a yearly-savings percentage, a source link on each row, and the date checked) without flagging them. That&apos;s the failure the first guardrail below is there to catch.</p>
+          <p className="lv-note"><b>How it did against its own skill.</b> Checked against the vendors&apos; pricing pages on Oct 26, 2026: every Figma annual price and every Linear price matches, as do Slack Pro and Business+, and it was right that Linear&apos;s page shows no monthly price. It missed one: Slack lists Enterprise+ at $45 per user a month, billed annually. It also skipped three things its skill asks for (a yearly-savings percentage, a source link on each row, and the date checked) without flagging them. That&apos;s the failure the first guardrail below is there to catch.</p>
         </div>
 
         <LiveRun example={EXAMPLE} skill={name} />
@@ -234,7 +237,7 @@ export default function SkillPage() {
               <ul>
                 <li><b>{num(Math.round(x.skillUsers))}</b> people save a skill</li>
                 <li><b>{num(Math.round(x.retainedMonths))}</b> subscriber-months kept</li>
-                <li>Each {usd(costUnit, 0)} spent building it takes about <b>{num(about(x.breakEvenUsers))}</b> paying users a year to earn back</li>
+                <li>Every {usd(costUnit, 0)} of build cost needs about <b>{num(about(x.breakEvenUsers))}</b> paying users for a year to pay back</li>
               </ul>
             </article>
           ))}
@@ -242,8 +245,8 @@ export default function SkillPage() {
         <div className="bc-notes">
           <p><b>Cost.</b> Writing a skill cost {usd(written.costUsd, 3)} in one measured Agent API call, so writing every skill in the base case costs about {usd(Math.round(base.writeCostUsd), 0)}. Skill runs replace sessions people already pay for (my assumption). On {maxPlan.name} at {usd(maxPlan.usdPerMonth, 0)} a month, each kept subscriber-month is worth {Math.round(maxPlan.usdPerMonth / price)} times as much.</p>
           <p><b>The case against.</b> The direct value is small unless saving a skill changes who cancels. That churn effect is the assumption the whole case rests on, and nobody has measured it.</p>
-          <p><b>How to prove it.</b> Among people who trigger the offer, hold it back from {Math.round(bc.holdoutShare * 100)}% at random and compare who&apos;s still subscribed after {bc.holdoutDays} days. Size it first: seeing a {bc.rolloutGapPts}-point gap takes roughly {num(about(holdoutSize(bc.rolloutGapPts, bc.holdoutShare)))} people who trigger the offer (my estimate, assuming 90% still subscribed), so widen the holdout if fewer qualify. A gap of {bc.rolloutGapPts} points or more: roll out wider. Between zero and {bc.rolloutGapPts}: keep it, and test the trigger and the copy. No gap: stop at the first version.</p>
-          <p><b>Kill criteria.</b> Stop investing past the first version if skills run again stays under its bar for four weekly cohorts in a row, or the holdout shows no retention gap after {bc.holdoutDays} days.</p>
+          <p><b>How to prove it.</b> Among people who trigger the offer, hold it back from {Math.round(bc.holdoutShare * 100)}% at random and compare who&apos;s still subscribed after {bc.holdoutDays} days. Size it first: seeing a {bc.rolloutGapPts}-point gap takes roughly {num(about(holdoutSize(bc.rolloutGapPts, bc.holdoutShare)))} people who trigger the offer (my estimate, assuming 90% still subscribed). At the base repeat rate that&apos;s about {num(about(holdoutSize(bc.rolloutGapPts, bc.holdoutShare) / repeatBase))} paying Computer users; if fewer qualify, a 50/50 split needs about {num(about(holdoutSize(bc.rolloutGapPts, 0.5)))} who trigger it. Gap of {bc.rolloutGapPts} points or more: roll out wider. Gap clearly above zero but under {bc.rolloutGapPts}: keep it, and test the trigger and the copy. Gap not clearly above zero: stop at the first version.</p>
+          <p><b>Kill criteria.</b> Stop investing past the first version if skills run again stays under {RERUN_BAR_PCT}% for four weekly cohorts in a row, or the holdout shows no gap in habit or retention after {bc.holdoutDays} days.</p>
         </div>
         <details className="rfold">
           <summary><strong>Assumptions and arithmetic</strong><span>Every rate, what backs it, and the formula</span></summary>
@@ -327,7 +330,7 @@ export default function SkillPage() {
           <details className="rfold sum-limits">
             <summary><strong>What this prototype doesn&apos;t show</strong><span>Limits</span></summary>
             <ul>
-              <li>The skill is written and run on Perplexity&apos;s Agent API, not inside Computer. The offer and the sidebar are my proposal. Computer already runs skills when they&apos;re relevant, and plugins from its / menu.</li>
+              <li>The skill is written and run on Perplexity&apos;s Agent API, not inside Computer. The offer and the sidebar are my proposal. Computer already runs skills when they&apos;re relevant.</li>
               <li>The two sessions were recorded with my extension in a test browser. Real users repeat tasks less neatly.</li>
               <li>One recorded run is shown, and its prices were checked against the vendors&apos; pages on Oct 26, 2026. Answers vary between runs, and the others aren&apos;t checked.</li>
               <li>Runs sometimes cite sources as numbered markers that don&apos;t map to pages, so I list the pages each run read instead.</li>

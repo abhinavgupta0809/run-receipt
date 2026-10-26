@@ -47,7 +47,7 @@ export default function LiveRun({ example, skill }: { example: string; skill: st
     <div className="lv-live">
       <form onSubmit={run} className="lv-form">
         <label htmlFor="lv-q">Ask the skill about any apps</label>
-        <textarea id="lv-q" value={question} onChange={(e) => setQuestion(e.target.value)} rows={2} maxLength={300} />
+        <textarea id="lv-q" value={question} onChange={(e) => setQuestion(e.target.value)} rows={3} maxLength={300} />
         <div className="lv-form-row">
           <div>
             <label htmlFor="lv-pass">Passcode</label>
@@ -57,7 +57,7 @@ export default function LiveRun({ example, skill }: { example: string; skill: st
             {state === "running" ? `Running on Perplexity… ${elapsed}s` : `Run /${skill}`}
           </button>
         </div>
-        <p className="lv-note">Each run calls Perplexity&apos;s Agent API with the saved skill and costs me about $0.04, so it needs a passcode. Runs take 30 to 90 seconds.</p>
+        <p className="lv-note">Each run calls Perplexity&apos;s Agent API with the saved skill and costs me about $0.05, so it needs a passcode. Runs take about 30 to 90 seconds.</p>
       </form>
       <div aria-live="polite">
         {state === "error" && <p className="lv-error">{error}</p>}

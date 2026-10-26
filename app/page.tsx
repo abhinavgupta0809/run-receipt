@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import Link from "next/link";
+import { day } from "@/lib/livedemo.ts";
 import { PROPOSED, PROTOCOL, rangeBacktest } from "@/lib/study.ts";
 import { load } from "./data";
 import { credits, span } from "./format";
@@ -24,6 +25,7 @@ export default function Overview() {
   const { runs, replay: d } = load();
   const h = d.headline;
   const research = JSON.parse(readFileSync(path.join(process.cwd(), "data", "research.json"), "utf8")) as Research;
+  const skillDay = day((JSON.parse(readFileSync(path.join(process.cwd(), "data", "skill", "live", "sessions.json"), "utf8")) as { recordedOn: string }[])[0].recordedOn);
   const raw = rangeBacktest(runs);
   const padded = rangeBacktest(runs, PROPOSED.padPct);
   const business = JSON.parse(readFileSync(path.join(process.cwd(), "data", "business.json"), "utf8")) as { plans: { name: string; usdPerMonth: number }[] };
@@ -91,7 +93,7 @@ export default function Overview() {
             proto="Run Receipt" protoLine="A cost range before you send, an honest count while it runs, sums checked by code after."
             ev={{ cls: "strong", text: "Measured in my runs" }} />
           <PersonaLink href="/skill" tone="sk" icon="repeat" name="The repeat-task user"
-            line="Runs the same job again and again: a weekly report, a price check."
+            line="Does the same kind of job on new inputs: a price check, a vendor comparison."
             pain={{ icon: "receipt", value: "3×", label: "one pricing prompt in my cost test, every step redone and paid for each time" }}
             proto="Session to Skill" protoLine="Price two apps, then two more: you get asked once, and the method becomes a skill that runs on any app."
             ev={{ cls: "hyp", text: "Seen in my sessions, to test" }} />
@@ -108,15 +110,15 @@ export default function Overview() {
           <div className="ov-branches">
             <Link className="ov-branch is-rr" href="/receipt#metrics-h">
               <span className="ov-n">01 · Run Receipt</span>
-              <span className="bm-label">North star</span>
+              <span className="bm-label">Feature north star</span>
               <strong>Estimate hit rate</strong>
               <span className="ov-bline">Runs that land inside the quoted range. {raw.hits} of {raw.n} in my runs, or {padded.hits} of {padded.n} with the range {PROPOSED.padPct}% wider; proposed bar {PROPOSED.hitRatePct}%.</span>
             </Link>
             <Link className="ov-branch is-sk" href="/skill#metrics-h">
               <span className="ov-n">02 · Session to Skill</span>
-              <span className="bm-label">North star</span>
+              <span className="bm-label">Feature north star</span>
               <strong>Skills run again</strong>
-              <span className="ov-bline">Saved skills used twice in the 14 days after saving. No baseline yet.</span>
+              <span className="ov-bline">Saved skills run at least twice in the 14 days after saving. No baseline yet.</span>
             </Link>
           </div>
         </div>
@@ -130,7 +132,7 @@ export default function Overview() {
           <p><strong>Abhinav Gupta.</strong> MS Product Management, Carnegie Mellon (Tepper), Dec 2026. Six years in product and growth at Flipkart, ShareChat, Meesho and Tata 1mg.</p>
           <p className="ov-buttons"><a className="btn" href={PORTFOLIO} target="_blank" rel="noopener">Portfolio</a><a className="btn btn-quiet" href={RESUME} target="_blank" rel="noopener">Résumé</a><a className="btn btn-quiet" href={LINKEDIN} target="_blank" rel="noopener">LinkedIn</a><a className="btn btn-quiet" href={GITHUB} target="_blank" rel="noopener">GitHub</a><Link className="btn btn-quiet" href="/evidence">Evidence</Link></p>
         </div>
-        <p className="ov-fine">One account, one Mac, one week ({PROTOCOL.period}). Every comparison is a count, not a rate. Built with Claude Code as a coding partner.</p>
+        <p className="ov-fine">One account, one Mac. Run Receipt runs {PROTOCOL.period}; Session to Skill sessions recorded {skillDay}. Every finding is a small count, not a measured rate. Built with Claude Code as a coding partner.</p>
       </section>
 
       <section className="ov-real" aria-label="What's real and what's simulated">

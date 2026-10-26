@@ -1,3 +1,13 @@
+# Final review pass, 2026-10-26 (Claude Code)
+
+Four review agents (dashboard QA, overview QA, /skill QA with hand-recomputed math, Perplexity fact-check) found no blockers; fixes below.
+
+- **Facts:** /skill's "What Computer has today" now names Automations (changelog Oct 5, 2026: rerun work on a schedule or event, can use skills) and says why they differ from learning a skill from two sessions. The "/ menu for plugins" claim is dropped (no source found). Personas no longer lead with "a weekly report" (Automations serve that). /receipt says my two-page research brief cost 33.39 credits against the guide's 350 to 950 range, and the Pro/Max credit line now matches the credits guide (Max 10,000 a month; Pro weekly usage, then credits).
+- **Metrics:** starting bars on the feature north star (30%), offers dismissed (50%), runs on new inputs (10%), skills edited (50%); kill criteria use the same 30%. Holdout text gives the implied population (about 1.3 million paying Computer users at the base repeat rate; a 50/50 split needs about 110,000 who trigger it) and decision branches that don't need a test it can't power.
+- **Copy:** "pulled up 15 pages", "Official pages it found", break-even line reworded, live note about $0.05, overview prototype cards say "Feature north star", the about line dates Run Receipt and Session to Skill separately, Figma check says annual prices only.
+- **Mobile:** live question box is 3 rows; the demo's phone mode shows app names in session rows.
+- **Not changed:** the film's end card ("Oct 2 to Oct 8, 2026") describes the 27 runs and stays accurate.
+
 # Pre-send pass, 2026-10-26 (Claude Code)
 
 Before recruiter emails: a fact-check agent (Perplexity Help Center, changelog, vendor pricing pages) and a cold-read agent (recruiter and Computer product lead) reviewed the live site; fixes below.

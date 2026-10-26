@@ -69,7 +69,7 @@ export default function Evidence() {
             </ul>
           </Card>
           {h.effort && (
-            <Card title={`One setting took the same prompt from ${credits(h.effort.standard)} to ${credits(h.effort.high)} credits`} sub={`Effort set to High, against Standard, on the web. ${h.effort.times}x the credits.`}
+            <Card title={`Changing one setting moved the same prompt from ${credits(h.effort.standard)} to ${credits(h.effort.high)} credits`} sub={`Effort set to High, against Standard, on the web. ${h.effort.times}x the credits.`}
               limit="One run on each setting, web only.">
               <ul className="hb" data-chart>
                 {[{ name: "Standard", value: h.effort.standard }, { name: "High", value: h.effort.high }].map((r) => (

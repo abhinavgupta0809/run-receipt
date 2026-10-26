@@ -40,4 +40,7 @@ test("holdoutSize: a 0.5-point gap with a 10% holdout needs about 310,000 people
   assert.equal(holdoutSize(0.5, 0.1), 313600);
   assert.equal(about(holdoutSize(0.5, 0.1)), 310000);
   assert.ok(holdoutSize(0.5, 0.5) < holdoutSize(0.5, 0.1));
+  // 2.8² × 0.09 × 4 ÷ 0.005² = 112,896; 313,600 ÷ 25% repeat share ≈ 1.3 million paying users.
+  assert.equal(holdoutSize(0.5, 0.5), 112896);
+  assert.equal(about(313600 / 0.25), 1300000);
 });
