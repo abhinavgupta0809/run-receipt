@@ -72,9 +72,9 @@ export default function ReceiptPage() {
 
       <section aria-label="Who it's for">
         <Persona tone="rr" icon="coins" name="The paying power user"
-          line={`On ${business.plans.map((p) => p.name).join(" or ")}, giving Computer multi-step work that it bills by the credit.`}
+          line={`On ${business.plans.map((p) => p.name).join(" or ")}, giving Computer multi-step work that’s billed in credits once any included usage runs out.`}
           facts={[
-            { icon: "reviews", value: n(research.creditsRunOut.reviews), label: "paying users reviewed after running out of credits" },
+            { icon: "reviews", value: n(research.creditsRunOut.reviews), label: "store reviews about running out of credits, most from people who say they pay" },
             { icon: "coins", value: n(research.computerCredits.reviews), label: "reviews say Computer burned through their credits" },
           ]}
           why={<>A price you can&apos;t predict is hard to budget, so people send fewer runs or stop paying. That&apos;s my assumption; retention data would confirm or kill it.</>}
@@ -86,12 +86,15 @@ export default function ReceiptPage() {
         <h2 id="problem-h" className="tp-statement">Same prompt, {countWord(repeat.runs.length)} runs: {listOf(repeatFinals)} credits. Nothing on screen says which you&apos;ll get.</h2>
         <ul className="tp-proof" aria-label="Three problems, from my runs">
           <li className="cost"><b>{range}</b><span>credits for one prompt, same setting</span></li>
-          <li className="meter"><b>{h.panelLow} of {h.panelReadings}</b><span>times the meter read low at Finished</span></li>
-          <li className="hybrid"><b>{t.localRunsNotFullMarks} of {t.localRuns}</b><span>Hybrid runs on my Mac came back wrong or incomplete</span></li>
+          <li className="meter"><b>{h.panelLow} of {h.panelReadings}</b><span>runs where the credit counter showed less than the final bill when the run said Finished</span></li>
+          <li className="hybrid"><b>{t.localRunsNotFullMarks} of {t.localRuns}</b><span>runs where Hybrid mode used my Mac&apos;s local model came back wrong or incomplete</span></li>
         </ul>
+        <p className="sum-note tp-today">
+          <b>What Computer has today.</b> Plan Previews show the plan for long tasks, not a price, and Perplexity&apos;s own Computer guide says &ldquo;There is no built-in pre-run credit estimator today.&rdquo; The running credit total is there while a task works, but in my runs it read low at Finished {h.panelLow} of {h.panelReadings} times.
+        </p>
         <p className="tp-quote">
-          <span className="tp-tag">{n(research.creditsRunOut.reviews)} paying users ran out of credits</span>
-          <q>{quote.text}</q>
+          <span className="tp-tag">{n(research.creditsRunOut.reviews)} reviews about running out of credits</span>
+          <q>{/^[a-z]/.test(quote.text) ? `…${quote.text}` : quote.text}</q>
           <span className="tp-src">{quote.stars} of 5 stars, {quote.source}</span>
         </p>
       </section>
@@ -178,7 +181,7 @@ export default function ReceiptPage() {
             <div className="sum-research">
               <div>
                 <ul className="sum-counts" aria-label="What the reviews say about credits">
-                  <li className="cost"><b>{n(research.creditsRunOut.reviews)}</b><span>reviews are from paying users who ran out of credits</span></li>
+                  <li className="cost"><b>{n(research.creditsRunOut.reviews)}</b><span>reviews are about running out of credits, most from people who say they pay</span></li>
                   <li className="cost"><b>{n(research.creditsRunOut.lowStar)}</b><span>of those came with 1 or 2 stars</span></li>
                   <li className="cost"><b>{n(research.computerCredits.reviews)}</b><span>reviews say Computer burned through their credits</span></li>
                 </ul>
@@ -282,7 +285,7 @@ export default function ReceiptPage() {
               <b>Break-even.</b> One retained subscriber-month is worth {business.plans.map((p) => `${money(p.usdPerMonth).replace(/\.00$/, "")} on ${p.name}`).join(" and ")}. Every {money(business.costUnitUsd).replace(/\.00$/, "")} of build and running cost is paid back by {business.plans.map((p) => `${n(business.costUnitUsd / p.usdPerMonth)} retained ${p.name} months`).join(" or ")}.
             </p>
             <p className="sum-source">
-              I cannot size this. Subscriber counts, churn and credit revenue are inside Perplexity, and I will not guess them. The public signal is a count, not a rate: {n(research.creditsRunOut.reviews)} store reviews in the window above are from paying users who ran out of credits, {n(research.creditsRunOut.lowStar)} of them at 1 or 2 stars. Plan prices are list prices from {business.source}, checked {business.checked}.
+              I cannot size this. Subscriber counts, churn and credit revenue are inside Perplexity, and I will not guess them. The public signal is a count, not a rate: {n(research.creditsRunOut.reviews)} store reviews in the window above are about running out of credits, most from people who say they pay, {n(research.creditsRunOut.lowStar)} of them at 1 or 2 stars. Plan prices are list prices from {business.source}, checked {business.checked}.
             </p>
           </details>
           <details className="rfold sum-limits">

@@ -199,7 +199,7 @@ export default function Evidence() {
           <div className="prose mt-4 max-w-[46rem]">
             <p>Every file is made up: a bank export of {d.txnCount} transactions, an invoice list and a set of lab results. Each has an answer key, kept out of the test folder so it could not be attached by mistake.</p>
             <p>For each run I recorded the panel reading when it said Finished, the final charge from Analytics, the time, the files it produced, and whether the Privacy Gate appeared. I graded each output against its key afterwards.</p>
-            <p>&ldquo;Hybrid&rdquo; means the Hybrid toggle was on, with {PROTOCOL.localModel} as the local model. &ldquo;Cloud&rdquo; means it was off. {t.planned} planned tasks and {t.earlyTests} early tests, {credits(t.totalCredits)} credits ({money(t.totalUsd)}) in total. Task types: {t.taskLabels.join("; ")}.</p>
+            <p>&ldquo;Hybrid&rdquo; means Hybrid was selected in the model picker, with {PROTOCOL.localModel} as the local model. &ldquo;Cloud&rdquo; means it wasn&apos;t. {t.planned} planned tasks and {t.earlyTests} early tests, {credits(t.totalCredits)} credits ({money(t.totalUsd)}) in total. Task types: {t.taskLabels.join("; ")}.</p>
             <p>Small numbers. Most comparisons are one run on each side, on one account, one Mac and one local model, in one week. Nothing here is a rate.</p>
           </div>
         </details>

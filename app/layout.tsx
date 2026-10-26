@@ -18,6 +18,8 @@ const serif = localFont({ src: "./fonts/LibreBaskerville.ttf", variable: "--font
 const EMAIL = "agupta7@tepper.cmu.edu";
 const LINKEDIN = "https://www.linkedin.com/in/abhinavgupta0809";
 const GITHUB = "https://github.com/abhinavgupta0809";
+const PORTFOLIO = "https://abhinavgupta0809.github.io/";
+const RESUME = "https://abhinavgupta0809.github.io/cv.html";
 // Applied before first paint so a saved light theme does not flash dark, and a saved phone preview does not jump.
 // Also marks that scripts run, so motion that waits for a script never hides anything without one.
 const THEME_SCRIPT = `document.documentElement.dataset.js="1";try{var t=localStorage.getItem("run-receipt-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;var d=localStorage.getItem("run-receipt-device");if(d==="phone")document.documentElement.dataset.device=d}catch(e){}`;
@@ -46,8 +48,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                   <ThemeToggle />
                 </div>
               </div>
-              <p className="mh-tag">An outside study of Perplexity Computer by <strong>Abhinav Gupta</strong></p>
+              <p className="mh-tag">An outside study of Perplexity Computer by <strong>Abhinav Gupta</strong> · graduating Dec 2026, looking for AI product roles</p>
               <p className="masthead-links mh-social">
+                <a href={PORTFOLIO} target="_blank" rel="noopener">Portfolio</a>
+                <a href={RESUME} target="_blank" rel="noopener">Résumé</a>
                 <a href={LINKEDIN} target="_blank" rel="noopener">LinkedIn</a>
                 <a href={GITHUB} target="_blank" rel="noopener">GitHub</a>
                 <a href={`mailto:${EMAIL}`}>Email</a>
@@ -62,11 +66,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <footer className="border-t border-rule">
           <div className="small mx-auto w-full max-w-6xl px-4 py-6 sm:px-8">
             <p className="max-w-[70ch]">
-              Independent work. Not affiliated with Perplexity and not connected to its product. Every figure on this site comes from runs logged on one account. The test files are made up.
+              Independent work. Not affiliated with Perplexity and not connected to its product. Run figures come from one account: Oct 2 to 8, 2026 for Run Receipt and Oct 25, 2026 for Session to Skill. Review counts come from public app store reviews. The test files are made up.
             </p>
             <p className="mt-2">
               Abhinav Gupta, MS Product Management, Carnegie Mellon. <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
-              <span className="foot-links"><a href={LINKEDIN} target="_blank" rel="noopener">LinkedIn</a><a href={GITHUB} target="_blank" rel="noopener">GitHub</a></span>
+              <span className="foot-links"><a href={PORTFOLIO} target="_blank" rel="noopener">Portfolio</a><a href={LINKEDIN} target="_blank" rel="noopener">LinkedIn</a><a href={GITHUB} target="_blank" rel="noopener">GitHub</a></span>
             </p>
           </div>
         </footer>

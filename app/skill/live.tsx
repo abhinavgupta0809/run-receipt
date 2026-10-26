@@ -57,14 +57,14 @@ export default function LiveRun({ example, skill }: { example: string; skill: st
             {state === "running" ? `Running on Perplexity… ${elapsed}s` : `Run /${skill}`}
           </button>
         </div>
-        <p className="lv-note">Each run calls Perplexity&apos;s Agent API with the saved skill and costs me about $0.04, so it needs a passcode. Runs take 30 to 60 seconds.</p>
+        <p className="lv-note">Each run calls Perplexity&apos;s Agent API with the saved skill and costs me about $0.04, so it needs a passcode. Runs take 30 to 90 seconds.</p>
       </form>
       <div aria-live="polite">
         {state === "error" && <p className="lv-error">{error}</p>}
         {state === "done" && result && (
           <div className="lv-result demo-in">
             <p className="lv-meta">
-              <span>Live run</span><span>{result.seconds} s</span>{result.costUsd !== null && <span>${result.costUsd.toFixed(3)}</span>}<span>{result.model}</span>
+              <span>Live run</span><span>{result.seconds} s</span>{result.costUsd !== null && <span>${result.costUsd.toFixed(3)}</span>}<span>{result.model} via Perplexity&apos;s Agent API</span>
             </p>
             <AnswerView text={result.text} />
             {sources.length > 0 && (

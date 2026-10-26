@@ -15,6 +15,8 @@ type Research = {
 const n = (x: number) => x.toLocaleString("en-US");
 const LINKEDIN = "https://www.linkedin.com/in/abhinavgupta0809";
 const GITHUB = "https://github.com/abhinavgupta0809";
+const PORTFOLIO = "https://abhinavgupta0809.github.io/";
+const RESUME = "https://abhinavgupta0809.github.io/cv.html";
 
 // The front page: hero, who / problem / why, film, the research as numbers, the two personas and their
 // prototypes, how we'd know it worked, why listen to me, and what is real. Figures come from data/ through lib/.
@@ -23,8 +25,9 @@ export default function Overview() {
   const h = d.headline;
   const research = JSON.parse(readFileSync(path.join(process.cwd(), "data", "research.json"), "utf8")) as Research;
   const raw = rangeBacktest(runs);
+  const padded = rangeBacktest(runs, PROPOSED.padPct);
   const business = JSON.parse(readFileSync(path.join(process.cwd(), "data", "business.json"), "utf8")) as { plans: { name: string; usdPerMonth: number }[] };
-  // "Pro ($20) or Max ($200)": list prices from third-party guides, see data/business.json.
+  // "Pro ($20) or Max ($200)": list prices from Perplexity's Help Center, see data/business.json.
   const plans = business.plans.map((p) => `${p.name} ($${p.usdPerMonth})`).join(" or ");
 
   return (
@@ -33,8 +36,26 @@ export default function Overview() {
         <div>
           <p className="tp-independent">Two prototypes for Perplexity Computer · independent, not made by or with Perplexity</p>
           <h1>Same prompt, three runs, <em>three prices.</em></h1>
-          <p className="sum-lede">I measured {h.runs} Computer runs on my own account. Two moments leave paying users guessing. Here&apos;s what I&apos;d build.</p>
+          <p className="sum-lede">I measured {h.runs} Computer runs on my own account. I found two gaps: you can&apos;t see what a run will cost before you send it, and a task you repeat starts from scratch every time. Here&apos;s what I&apos;d build for each.</p>
         </div>
+        <figure className="ov-hero-film">
+          <video controls playsInline preload="metadata" poster="/video/run-receipt-overview.jpg" width={1920} height={1080}>
+            <source src="/video/run-receipt-overview.mp4" type="video/mp4" />
+            Your browser can&apos;t play this video. <a href="/video/run-receipt-overview.mp4">Download it</a>.
+          </video>
+          <figcaption>43 seconds · two personas, both prototypes · Run Receipt replays my recorded runs, Session to Skill shows the real skill and its Perplexity answer · no speech, so it works with the sound off · soundtrack made for this film</figcaption>
+        </figure>
+      </header>
+
+      <section aria-label="Who it's for, the problem, and why it matters">
+        <WhoWhatWhy
+          who={<><b>Paying Computer users</b> on {plans} a month, who hand it real multi-step work.</>}
+          what={<><b>No price before you send.</b> One prompt cost {span(h.widestRepeat.credits, credits)} credits across {h.widestRepeat.credits.n} runs on one setting.</>}
+          why={<><b>{n(research.creditsRunOut.reviews)} reviews</b> are about running out of credits, most from people who say they pay; {n(research.creditsRunOut.lowStar)} gave 1 or 2 stars. If people can&apos;t predict a price, they send fewer runs (my assumption).</>}
+        />
+      </section>
+
+      <section className="ov-dash-sec" aria-label="The reviews dashboard">
         {research.dashboardUrl && (
           <a className="ov-data" href={research.dashboardUrl} target="_blank" rel="noopener" aria-label={`Real customer data, analyzed: open the Perplexity app reviews dashboard (${n(research.corpus.reviews)} reviews)`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -42,24 +63,6 @@ export default function Overview() {
             <span className="ov-data-cap"><strong>Real customer data, analyzed</strong><span>{n(research.corpus.reviews)} public app reviews, labelled and charted · open the dashboard ↗</span></span>
           </a>
         )}
-      </header>
-
-      <section aria-label="Who it's for, the problem, and why it matters">
-        <WhoWhatWhy
-          who={<><b>Paying Computer users</b> on {plans} a month, who hand it real multi-step work.</>}
-          what={<><b>No price before you send.</b> One prompt cost {span(h.widestRepeat.credits, credits)} credits across {h.widestRepeat.credits.n} runs on one setting.</>}
-          why={<><b>{n(research.creditsRunOut.reviews)} paying users</b> wrote a review after running out of credits; {n(research.creditsRunOut.lowStar)} gave 1 or 2 stars. If people can&apos;t predict a price, they send fewer runs (my assumption).</>}
-        />
-      </section>
-
-      <section className="ov-film" aria-label="Both prototypes in 43 seconds">
-        <figure>
-          <video controls playsInline preload="metadata" poster="/video/run-receipt-overview.jpg" width={1920} height={1080}>
-            <source src="/video/run-receipt-overview.mp4" type="video/mp4" />
-            Your browser can&apos;t play this video. <a href="/video/run-receipt-overview.mp4">Download it</a>.
-          </video>
-          <figcaption>43 seconds · two personas, both prototypes · Run Receipt replays my recorded runs, Session to Skill shows the real skill and its Perplexity answer · no speech, so it works with the sound off · soundtrack made for this film</figcaption>
-        </figure>
       </section>
 
       <section aria-labelledby="work-h">
@@ -79,17 +82,17 @@ export default function Overview() {
       <section aria-labelledby="protos-h">
         <div className="ov-head">
           <h2 id="protos-h" className="sum-h2">Two people, two prototypes</h2>
-          <p>Computer should tell you what a run will cost, and remember the work you keep repeating.</p>
+          <p>Computer should tell you what a run will cost, and turn the work you keep repeating into a skill.</p>
         </div>
         <div className="ov-personas">
           <PersonaLink href="/receipt" tone="rr" icon="coins" name="The paying power user"
             line={`Pays ${plans} a month and gives Computer real work: reports, research, file checks.`}
-            pain={{ icon: "reviews", value: n(research.creditsRunOut.reviews), label: "paying users reviewed after running out of credits" }}
+            pain={{ icon: "reviews", value: n(research.creditsRunOut.reviews), label: "store reviews about running out of credits, most from people who say they pay" }}
             proto="Run Receipt" protoLine="A cost range before you send, an honest count while it runs, sums checked by code after."
             ev={{ cls: "strong", text: "Measured in my runs" }} />
           <PersonaLink href="/skill" tone="sk" icon="repeat" name="The repeat-task user"
             line="Runs the same job again and again: a weekly report, a price check."
-            pain={{ icon: "receipt", value: "3×", label: "one prompt, word for word, in a day of my sessions, paid for each time" }}
+            pain={{ icon: "receipt", value: "3×", label: "one pricing prompt in my cost test, every step redone and paid for each time" }}
             proto="Session to Skill" protoLine="Price two apps, then two more: you get asked once, and the method becomes a skill that runs on any app."
             ev={{ cls: "hyp", text: "Seen in my sessions, to test" }} />
         </div>
@@ -101,13 +104,13 @@ export default function Overview() {
           <p>Each prototype has one number that decides it. Both roll up to one Perplexity-level goal.</p>
         </div>
         <div className="ov-tree">
-          <div className="ov-root"><span className="bm-label">Perplexity-level goal (my assumption)</span><strong>Paying Computer users who stay subscribed</strong></div>
+          <div className="ov-root"><span className="bm-label">Perplexity-level goal (my assumption)</span><strong>Paying Computer users who stay subscribed</strong><span className="ov-bline">North star: paying users with a kept task in at least 3 of the last 4 weeks.</span></div>
           <div className="ov-branches">
             <Link className="ov-branch is-rr" href="/receipt#metrics-h">
               <span className="ov-n">01 · Run Receipt</span>
               <span className="bm-label">North star</span>
               <strong>Estimate hit rate</strong>
-              <span className="ov-bline">Runs that land inside the quoted range. {raw.hits} of {raw.n} in my runs today; proposed bar {PROPOSED.hitRatePct}%.</span>
+              <span className="ov-bline">Runs that land inside the quoted range. {raw.hits} of {raw.n} in my runs, or {padded.hits} of {padded.n} with the range {PROPOSED.padPct}% wider; proposed bar {PROPOSED.hitRatePct}%.</span>
             </Link>
             <Link className="ov-branch is-sk" href="/skill#metrics-h">
               <span className="ov-n">02 · Session to Skill</span>
@@ -125,7 +128,8 @@ export default function Overview() {
           <h2 id="about-h" className="sum-h2">Why listen to me</h2>
           <p className="ov-lede">I didn&apos;t guess. I ran the tasks on my own account, logged every credit, and graded results against files with a known answer.</p>
           <p><strong>Abhinav Gupta.</strong> MS Product Management, Carnegie Mellon (Tepper), Dec 2026. Six years in product and growth at Flipkart, ShareChat, Meesho and Tata 1mg.</p>
-          <p className="ov-buttons"><a className="btn" href={LINKEDIN} target="_blank" rel="noopener">LinkedIn</a><a className="btn btn-quiet" href={GITHUB} target="_blank" rel="noopener">GitHub</a><Link className="btn btn-quiet" href="/evidence">Evidence</Link></p>
+          <p><strong>Graduating December 2026 and looking for AI product roles.</strong></p>
+          <p className="ov-buttons"><a className="btn" href={PORTFOLIO} target="_blank" rel="noopener">Portfolio</a><a className="btn btn-quiet" href={RESUME} target="_blank" rel="noopener">Résumé</a><a className="btn btn-quiet" href={LINKEDIN} target="_blank" rel="noopener">LinkedIn</a><a className="btn btn-quiet" href={GITHUB} target="_blank" rel="noopener">GitHub</a><Link className="btn btn-quiet" href="/evidence">Evidence</Link></p>
         </div>
         <p className="ov-fine">One account, one Mac, one week ({PROTOCOL.period}). Every comparison is a count, not a rate. Built with Claude Code as a coding partner.</p>
       </section>
@@ -136,7 +140,7 @@ export default function Overview() {
           <ul>
             <li><b>Real:</b> the credits, times and results of {h.runs} runs on my own account, {PROTOCOL.period}, and the review counts and quotes from the dashboard ({research.corpus.from} to {research.corpus.to}).</li>
             <li><b>Real on Perplexity:</b> Session to Skill&apos;s skill was written from two recorded sessions and run on Perplexity&apos;s Agent API.</li>
-            <li><b>Simulated:</b> Run Receipt replays recorded runs and does not connect to Perplexity. Its test files are made up. The skill offer inside Computer, the sidebar and the slash command are my proposal.</li>
+            <li><b>Simulated:</b> Run Receipt replays recorded runs and does not connect to Perplexity. Its test files are made up. The skill offer inside Computer and the sidebar are my proposal.</li>
             <li><b>Not yet done:</b> testing either prototype with Perplexity users.</li>
           </ul>
         </details>

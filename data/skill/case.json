@@ -1,0 +1,28 @@
+{
+  "note": "Business case inputs for Session to Skill. Every rate is Abhinav's assumption: there is no Perplexity data behind them. Costs come from data/skill/live (measured). Plan prices come from data/business.json.",
+  "unitUsers": 10000,
+  "plan": "Pro",
+  "inputs": [
+    {
+      "key": "repeatShare",
+      "label": "Paying Computer users who do the same kind of task twice in a month",
+      "evidence": "My own sessions only: one pricing prompt three times in a day.",
+      "low": 0.10, "base": 0.25, "high": 0.40
+    },
+    {
+      "key": "acceptRate",
+      "label": "Of those, share who accept the offer and save a skill",
+      "evidence": "None yet. The offer has not been shown to anyone.",
+      "low": 0.15, "base": 0.30, "high": 0.45
+    },
+    {
+      "key": "churnCutPts",
+      "label": "Drop in monthly churn for people who save a skill, in percentage points",
+      "evidence": "None yet. This is the assumption the whole case rests on; the holdout test measures it.",
+      "low": 0.5, "base": 1.0, "high": 2.0
+    }
+  ],
+  "holdoutShare": 0.10,
+  "holdoutDays": 90,
+  "rolloutGapPts": 0.5
+}

@@ -1,3 +1,14 @@
+# Pre-send pass, 2026-10-26 (Claude Code)
+
+Before recruiter emails: a fact-check agent (Perplexity Help Center, changelog, vendor pricing pages) and a cold-read agent (recruiter and Computer product lead) reviewed the live site; fixes below.
+
+- **Fact fixes:** /skill no longer says a skill "starts from a blank page" (Perplexity documents "Create with Computer"); the problem is now "you have to describe the skill from memory", with a "What Computer has today" note naming Create with Computer, upload, and Brain (07/13/26). /receipt gains a "What Computer has today" note: Plan Previews show a plan, not a price, and Perplexity's Computer guide says "There is no built-in pre-run credit estimator today." The slash command is no longer called my proposal (Computer has a / menu for plugins). Plan prices now cite Perplexity's Help Center (checked Oct 26). Pro wording: credits apply once included usage runs out.
+- **Claim softening:** "202 paying users ran out of credits" is now "202 reviews about running out of credits, most from people who say they pay" everywhere, including the film. The 3 runs of one prompt are described as my cost test (each redid every step), not natural repeat use.
+- **Replay honesty:** a note under the recorded answer says what it got right and wrong against the vendors' pages (Oct 26) and against its own skill (missed Slack Enterprise+ $45; skipped savings %, per-row links, date checked, unflagged).
+- **New on /skill:** company north star (habitual paying Computer users), feature north star, four guardrails, three supporting metrics, a definitions table with the decision each controls, and a business case (`data/skill/case.json`, `lib/skillcase.ts`): per 10,000 paying users, low/base/high, measured skill-writing cost, break-even, the case against, a holdout test with decision rules, kill criteria.
+- **Recruiter:** portfolio and résumé links (header, footer, about), a "graduating Dec 2026, looking for AI product roles" line, contact links kept on phone, the film moved into the overview hero with the dashboard card below.
+- **Not done:** reviews dashboard refresh to Oct 25 (Apple's review feed returned almost nothing on Oct 26; Play is fine). GitHub still links to the profile, not the repo.
+
 # Session to Skill runs on Perplexity, 2026-10-25 (Claude Code)
 
 Abhinav asked to rebuild Microsoft's skill-recorder idea on Perplexity and to make the skill general: do a pricing analysis on different tools, get one pricing-analysis skill, not a Notion/Obsidian one.

@@ -1002,7 +1002,7 @@ a:hover { text-decoration-color:var(--brand); }
 @media (hover:hover) and (pointer:fine) { .masthead nav a:hover { color:var(--ink); } }
 .foot-links { display:inline-flex; gap:14px; margin-left:14px; }
 @media (max-width:700px) {
-  .mh-tag, .mh-social { display:none; }
+  .mh-tag { display:none; }
   .masthead > div > div { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; width:100%; padding-bottom:6px; }
   .foot-links { display:flex; margin:8px 0 0; }
 }
@@ -1115,7 +1115,7 @@ a:hover { text-decoration-color:var(--brand); }
   .masthead > div > div.mh-id { display:block; padding-bottom:4px; }
   .mh-brand { font-size:1.375rem; white-space:nowrap; }
   .masthead .mh-tag { display:block; font-size:.8125rem; }
-  .masthead .mh-social { display:none; }
+  .masthead .mh-social { display:flex; flex-wrap:wrap; font-size:.8125rem; gap:4px 14px; }
   .mh-tools a.dash, .mh-tools .soon { font-size:.75rem; white-space:nowrap; }
 }
 
@@ -1460,3 +1460,37 @@ html[data-device="phone"] :is(.rr-demo, .sk-demo) { grid-template-columns:390px 
   .demo-composer { font-size:.8125rem; }
 }
 @media (prefers-reduced-motion: reduce) { .demo-did li, .demo-chips { animation:none; opacity:1; } }
+
+/* Session to Skill: metric ladder and business case (2026-10-26). */
+.mx-ladder { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:20px; margin-bottom:20px; }
+.mx-company { border-style:dashed; }
+.mx-two { grid-template-columns:repeat(2, minmax(0,1fr)); }
+.mx-defs { margin-top:20px; }
+.mx-table table { font-size:.8125rem; }
+.mx-table td { min-width:150px; }
+.mx-table td:first-child { min-width:170px; }
+.mx-kind { display:block; margin-top:2px; font-size:.6875rem; letter-spacing:.08em; text-transform:uppercase; color:var(--ink2); }
+.bc-grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:20px; margin-top:8px; }
+.bc-card { border:1px solid var(--rule); border-radius:14px; padding:22px; background:var(--sheet); display:grid; gap:10px; align-content:start; }
+.bc-card.is-base { border-color:var(--skill); background:var(--skill-bg); }
+.bc-big { font-family:var(--font-serif), Georgia, serif; font-size:2.25rem; line-height:1.1; color:var(--ink); font-variant-numeric:tabular-nums; }
+.bc-big small { font-family:var(--font-sans); font-size:.9375rem; color:var(--ink2); }
+.bc-card ul { list-style:none; padding:0; display:grid; gap:6px; font-size:.9375rem; color:var(--soft); }
+.bc-card li b { color:var(--ink); font-variant-numeric:tabular-nums; }
+.bc-notes { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:16px 28px; margin:24px 0; }
+.bc-notes p { font-size:.9375rem; line-height:1.55; color:var(--soft); }
+.bc-notes b { color:var(--ink); }
+.bc-math { padding-left:18px; display:grid; gap:6px; margin-top:14px; font-size:.875rem; color:var(--soft); }
+@media (max-width:900px) {
+  .mx-ladder, .mx-two, .bc-grid, .bc-notes { grid-template-columns:1fr; }
+}
+
+/* Overview hero holds the film; the dashboard card sits below the who/what/why band (2026-10-26). */
+.ov-hero-film { margin:0; }
+.ov-hero-film video { display:block; width:100%; height:auto; aspect-ratio:16 / 9; background:#0e0f12; border:1px solid var(--rule); border-radius:14px; box-shadow:var(--shadow); }
+.ov-hero-film figcaption { margin-top:10px; font-size:.75rem; line-height:1.45; color:var(--ink2); }
+.ov-dash-sec .ov-data { max-width:620px; }
+
+.ov-buttons { flex-wrap:wrap; }
+.sum-note.tp-today { margin:22px 0 0; max-width:60rem; font-size:.9375rem; line-height:1.55; color:var(--soft); }
+.sum-note.tp-today b { color:var(--ink); }
