@@ -48,7 +48,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                   <ThemeToggle />
                 </div>
               </div>
-              <p className="mh-tag">An outside study of Perplexity Computer by <strong>Abhinav Gupta</strong> · graduating Dec 2026, looking for AI product roles</p>
+              <p className="mh-tag">An outside study of Perplexity Computer by <strong>Abhinav Gupta</strong></p>
               <p className="masthead-links mh-social">
                 <a href={PORTFOLIO} target="_blank" rel="noopener">Portfolio</a>
                 <a href={RESUME} target="_blank" rel="noopener">Résumé</a>

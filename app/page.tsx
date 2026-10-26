@@ -128,7 +128,6 @@ export default function Overview() {
           <h2 id="about-h" className="sum-h2">Why listen to me</h2>
           <p className="ov-lede">I measured before I proposed anything. I ran the tasks on my own account, logged every credit, and graded results against files with a known answer.</p>
           <p><strong>Abhinav Gupta.</strong> MS Product Management, Carnegie Mellon (Tepper), Dec 2026. Six years in product and growth at Flipkart, ShareChat, Meesho and Tata 1mg.</p>
-          <p><strong>Graduating December 2026 and looking for AI product roles.</strong></p>
           <p className="ov-buttons"><a className="btn" href={PORTFOLIO} target="_blank" rel="noopener">Portfolio</a><a className="btn btn-quiet" href={RESUME} target="_blank" rel="noopener">Résumé</a><a className="btn btn-quiet" href={LINKEDIN} target="_blank" rel="noopener">LinkedIn</a><a className="btn btn-quiet" href={GITHUB} target="_blank" rel="noopener">GitHub</a><Link className="btn btn-quiet" href="/evidence">Evidence</Link></p>
         </div>
         <p className="ov-fine">One account, one Mac, one week ({PROTOCOL.period}). Every comparison is a count, not a rate. Built with Claude Code as a coding partner.</p>
